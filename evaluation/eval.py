@@ -131,7 +131,8 @@ def _parse_judge_json(raw_text: str) -> dict:
     return json.loads(cleaned.strip())
 
 
-def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None) -> tuple[AnswerEval, str, list]:
+def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None, engine="linear",
+                    allow_fallback=True, trace_out=None) -> tuple[AnswerEval, str, list]:
     """Evaluate answer quality using LLM-as-a-judge.
 
     retriever_k overrides the retriever's default chunk count (D-007),
@@ -139,7 +140,11 @@ def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None) -> tuple[
 
     Returns (AnswerEval, generated_answer, retrieved_docs).
     """
-    generated_answer, retrieved_docs = answer_question(vectorstore, test.question, k=retriever_k)
+    generated_answer, retrieved_docs, trace = answer_question(
+        vectorstore, test.question, k=retriever_k, engine=engine, allow_fallback=allow_fallback)
+    if trace_out is not None:
+        trace_out.clear()
+        trace_out.update(trace)
 
     judge_system_prompt = (
         "You are an expert evaluator assessing the quality of answers. "
@@ -254,7 +259,7 @@ def _load_completed_questions():
     return completed
 
 
-def run_full_evaluation(vectorstore, resume=True):
+def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True):
     """Run retrieval + answer evaluation across the full test set.
 
     Saves each result to evaluation/results.jsonl as soon as it's computed
@@ -266,6 +271,11 @@ def run_full_evaluation(vectorstore, resume=True):
     If resume=True (default) and results.jsonl already has entries from a
     prior run, those questions are skipped rather than re-evaluated.
     """
+    global RESULTS_FILE
+    if results_file:
+        RESULTS_FILE = str(results_file)  # one file per run, never mix two runs (D-010)
+    print(f"Engine: {engine} | fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
+
     tests = load_tests()
     already_done = _load_completed_questions() if resume else set()
     if already_done:
@@ -282,7 +292,9 @@ def run_full_evaluation(vectorstore, resume=True):
 
         try:
             retrieval_result = _retry(lambda: evaluate_retrieval(vectorstore, test))
-            answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(vectorstore, test))
+            trace = {}
+            answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(
+                vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace))
         except Exception as e:
             print(f"  FAILED after retries: {e}\n")
             continue
@@ -298,6 +310,13 @@ def run_full_evaluation(vectorstore, resume=True):
             "answer_relevance": answer_result.relevance,
             "answer_feedback": answer_result.feedback,
             "generated_answer": generated_answer,
+            "engine": engine,
+            "route": trace.get("route"),
+            "sub_queries": trace.get("sub_queries"),
+            "rewrites": trace.get("rewrites"),
+            "llm_calls": trace.get("llm_calls"),
+            "latency_ms": trace.get("latency_ms"),
+            "answered_by": trace.get("answered_by"),
         }
         results_file.write(json.dumps(result_record, ensure_ascii=False) + "\n")
         results_file.flush()  # write to disk immediately, don't wait for buffer
@@ -337,9 +356,19 @@ def run_full_evaluation(vectorstore, resume=True):
 
 
 if __name__ == "__main__":
+    import argparse
     import sys
     sys.path.append(".")
     from ingest import ingest
 
+    parser = argparse.ArgumentParser(description="Run the Pitchwise evaluation.")
+    parser.add_argument("--engine", choices=["linear", "agentic"], default="linear")
+    parser.add_argument("--results", help="results file for this run (default: evaluation/results.jsonl)")
+    parser.add_argument("--pin-model", action="store_true",
+                        help="disable provider fallback so the whole run uses one model (D-010)")
+    parser.add_argument("--no-resume", action="store_true", help="ignore existing results in the file")
+    args = parser.parse_args()
+
     store = ingest()
-    run_full_evaluation(store)
+    run_full_evaluation(store, resume=not args.no_resume, engine=args.engine,
+                        results_file=args.results, allow_fallback=not args.pin_model)

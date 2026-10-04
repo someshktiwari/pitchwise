@@ -1,0 +1,13 @@
+.env
+.env.*
+.venv/
+venv/
+.git/
+__pycache__/
+*.pyc
+.pytest_cache/
+notebooks/
+screenshots/
+evaluation/*.jsonl
+evaluation/*.json
+.DS_Store

@@ -10,6 +10,7 @@ alternatives considered, the reasoning, and the trade-offs explicitly accepted.
 
 **Part I — Architectural Decisions**
 D-001 through D-008 — ingestion and generation pipeline decisions.
+D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -399,6 +400,103 @@ working, responsive experience for that audience.
   which may not clearly explain that every option was actually tried —
   acceptable for now, worth revisiting if debugging a full outage ever
   becomes difficult in practice
+
+---
+
+## D-009 · v2 Agentic Engine: an Explicit LangGraph Graph, Not a ReAct Agent
+
+**Date:** October 2026
+
+**Decision:** add a second engine, `engine="agentic"` (`graph.py`), built as an
+explicit LangGraph `StateGraph`: plan → retrieve → (grade → rewrite loop) →
+generate. The v1 pipeline stays as `engine="linear"`, and both engines share
+the same retrieval function and the same grounded generation prompt.
+
+**Why:** the evaluation localised the weakness. `spanning` (compound)
+questions scored 4.1/5 against 5.0/5 for direct facts, and D-007's failure
+analysis split those failures into retrieval gaps (keyword coverage 0–50%)
+and over-conservative refusals. Query decomposition plus a sufficiency check
+targets the first type directly: each needed fact gets its own retrieval, and
+a missing fact triggers a targeted re-retrieval.
+
+**Alternatives considered:**
+- *Raise k (e.g. k=8)* — the cheapest fix for retrieval gaps, with no extra
+  LLM calls. Kept as the control in the v2 evaluation: if k=8 matches the
+  agentic engine, the graph is not earning its cost.
+- *Prebuilt ReAct agent with a retriever tool* (`create_react_agent`) — the
+  model decides when to retrieve and when to stop. Rejected: retrieval could
+  be skipped entirely (breaking the grounding guarantee from C-003), the
+  number of calls is unbounded, and branches are hard to test in isolation.
+
+**Design rules:**
+- *Always retrieve, original question first.* The agentic context is a
+  superset of what v1 would retrieve (before the 10-chunk cap).
+- *Simple questions skip grading.* They cost 2 LLM calls (plan, generate),
+  which protects the categories v1 already answers at 5.0/5.
+- *Fail open.* Unparseable planner output → treat as simple with the original
+  question; unparseable grader output → treat as sufficient. Either way the
+  engine degrades to v1 behaviour rather than erroring or guessing.
+- *Bounded cost.* At most 2 rewrites (worst case 7 LLM calls); LangGraph's
+  recursion limit (20) is only a safety net above that cap.
+- *One grading call over all chunks*, not one per chunk, to keep cost flat.
+- *Temperature 0 for the routing calls* (plan, grade, rewrite) for repeatable
+  decisions; the generation call is left exactly as in v1.
+
+**State design:** `trace` and `sub_queries` use an `operator.add` reducer
+(they accumulate across steps); `docs` deliberately does not — `retrieve`
+rebuilds the full merged set on each pass, so overwriting avoids the kind of
+silent duplication found in C-001.
+
+**Trade-offs accepted:**
+- Every question now costs at least 2 LLM calls instead of 1, and multi
+  questions up to 7, so latency rises. Measured per category in the v2 eval.
+- The planner can misroute. The route is recorded for every eval question,
+  so misroutes are visible rather than hidden.
+
+**Status:** built and covered by offline tests; accuracy comparison against
+the v1 baseline not yet run. No v2 accuracy claims until it is.
+
+---
+
+## D-010 · Evaluation Runs Can Pin One Model and Use Their Own Results File
+
+**Decision:** `evaluation/eval.py` gains `--engine`, `--results` and
+`--pin-model`. With `--pin-model`, provider fallback (D-008) is disabled for
+the run, and every result row records which model answered.
+
+**Why:** silent fallback is right for a demo but wrong for measurement. If the
+default provider rate-limits mid-run and another model answers, the run
+compares two models instead of two engines. A separate results file per run
+prevents two runs from being merged by the resume logic (C-002).
+
+**Trade-offs accepted:** a pinned run is more likely to hit rate limits; the
+existing retry logic (C-002) and resume make that a delay, not a lost run.
+
+---
+
+## D-011 · Service Layer: FastAPI + Gradio in One Container
+
+**Decision:** `api.py` serves `POST /ask` and `GET /health` with Pydantic
+request/response models, and mounts the Gradio UI at `/` on the same app. The
+`Dockerfile` runs it with uvicorn on port 7860, the port Hugging Face Docker
+Spaces expect.
+
+**Choices inside it:**
+- *Plain `def` endpoints, not `async def`.* The LLM SDK calls block; FastAPI
+  runs `def` endpoints in a thread pool, whereas blocking inside `async def`
+  would stall the event loop for every request.
+- *One vector store for API and UI*, built once at startup (D-005).
+- *503 when every provider fails* (D-008); 400 for an unknown model; 422 from
+  Pydantic for invalid input; questions capped at 500 characters to protect
+  free-tier quotas on a public demo.
+- *Keys only at run time* (`--env-file` / Space secrets), never in the image.
+- *The embedding model is baked into the image* so a cold start doesn't
+  download it.
+
+**Trade-offs accepted:** `sentence-transformers` pulls a full PyTorch build,
+so the image is large (several GB including CUDA libraries the CPU-only
+deployment doesn't use). A CPU-only PyTorch install would cut that
+substantially; deferred until the deployment is live.
 
 ---
 

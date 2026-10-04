@@ -12,9 +12,14 @@ Implements the decisions recorded in DECISIONS.md:
 
 Supports Gemini, Groq, and OpenRouter — the user (or app.py's UI) can select
 any of them explicitly; if unspecified, the fastest default is used.
+
+v2 (D-009): answer_question() takes engine="linear" (this file's original
+pipeline) or engine="agentic" (graph.py). Both share retrieve_context() and
+generate_from_context(), and both return (answer_text, docs, trace).
 """
 
 import os
+import time
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
@@ -97,12 +102,17 @@ def _history_to_openai_messages(history):
     return [{"role": turn["role"], "content": turn["content"]} for turn in history]
 
 
-def call_gemini(model, system_prompt, question, history=None):
+def call_gemini(model, system_prompt, question, history=None, temperature=None):
     """Call a Gemini model via LangChain, returning a plain string.
     Gemini's response.content can be a nested list-of-dicts structure
     (seen during exploration, tied to its extended reasoning mode) rather
     than a plain string, so this normalizes it either way."""
-    llm = ChatGoogleGenerativeAI(model=model, temperature=0, google_api_key=GEMINI_API_KEY)
+    # temperature=0 by default, as before; callers may override (D-009)
+    llm = ChatGoogleGenerativeAI(
+        model=model,
+        temperature=0 if temperature is None else temperature,
+        google_api_key=GEMINI_API_KEY,
+    )
 
     messages = [SystemMessage(content=system_prompt)]
     if history:
@@ -121,7 +131,7 @@ def call_gemini(model, system_prompt, question, history=None):
     return str(content)
 
 
-def call_openai_compatible(base_url, api_key, model, system_prompt, question, history=None):
+def call_openai_compatible(base_url, api_key, model, system_prompt, question, history=None, temperature=None):
     """Call a Groq or OpenRouter model — both expose an OpenAI-compatible
     endpoint, so a single function handles both via a different base_url."""
     client = OpenAI(api_key=api_key, base_url=base_url)
@@ -131,63 +141,114 @@ def call_openai_compatible(base_url, api_key, model, system_prompt, question, hi
         messages.extend(_history_to_openai_messages(history))
     messages.append({"role": "user", "content": question})
 
-    response = client.chat.completions.create(model=model, messages=messages)
+    # Only send temperature when a caller asks for one, so the default
+    # generation path behaves exactly as it did in v1 (D-009).
+    kwargs = {"temperature": temperature} if temperature is not None else {}
+    response = client.chat.completions.create(model=model, messages=messages, **kwargs)
     return response.choices[0].message.content
 
 
-def call_model(provider, model, system_prompt, question, history=None):
+def call_model(provider, model, system_prompt, question, history=None, temperature=None):
     """Route to the correct provider's call function. Returns a plain
     string answer regardless of which provider handled it."""
     if provider == "gemini":
-        return call_gemini(model, system_prompt, question, history=history)
+        return call_gemini(model, system_prompt, question, history=history, temperature=temperature)
     elif provider == "groq":
-        return call_openai_compatible(GROQ_BASE_URL, GROQ_API_KEY, model, system_prompt, question, history=history)
+        return call_openai_compatible(GROQ_BASE_URL, GROQ_API_KEY, model, system_prompt, question,
+                                      history=history, temperature=temperature)
     elif provider == "openrouter":
-        return call_openai_compatible(OPENROUTER_BASE_URL, OPENROUTER_API_KEY, model, system_prompt, question, history=history)
+        return call_openai_compatible(OPENROUTER_BASE_URL, OPENROUTER_API_KEY, model, system_prompt, question,
+                                      history=history, temperature=temperature)
     else:
         raise ValueError(f"Unknown provider: {provider}")
 
 
-def answer_question(vectorstore, question, history=None, model_label=None, k=None):
-    """Full pipeline: retrieve relevant context, then generate an answer.
-
-    Accepts prior conversation history (list of {"role", "content"} dicts,
-    Gradio's format) so follow-up questions like "what was his average"
-    can resolve pronouns against earlier turns.
-
-    k overrides the retriever's default chunk count (D-007) — used for
-    testing, not by the production app, which relies on the default.
-
-    If model_label is given, tries that model first. If it fails (rate
-    limit, API error, etc.), silently falls back through FALLBACK_ORDER
-    until one succeeds. Returns (answer_text, docs) — docs is the list of
-    retrieved Document objects, so the caller can display which knowledge
-    base chunks were used to ground the answer.
-    """
-    docs, context = retrieve_context(vectorstore, question, k=k)
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context)
-
-    # Build the try-order: requested model first (if given), then the rest
-    # of the fallback chain, skipping duplicates.
+def build_try_order(model_label=None, allow_fallback=True):
+    """The order in which models are tried: the requested model first (if
+    any), then the rest of FALLBACK_ORDER (D-008). With allow_fallback=False
+    only the first model is tried, so an evaluation run measures exactly one
+    model instead of silently mixing providers (D-010)."""
     try_order = []
     if model_label and model_label in MODEL_OPTIONS:
         try_order.append(model_label)
     for label in FALLBACK_ORDER:
         if label not in try_order:
             try_order.append(label)
+    return try_order if allow_fallback else try_order[:1]
 
+
+def generate_with_fallback(system_prompt, question, history=None, model_label=None,
+                           allow_fallback=True, temperature=None):
+    """Call the first model in the try-order that succeeds. Returns
+    (answer_text, label_that_answered). Raises RuntimeError if every
+    option fails."""
     last_error = None
-    for label in try_order:
+    for label in build_try_order(model_label, allow_fallback):
         provider, model = MODEL_OPTIONS[label]
         try:
-            answer_text = call_model(provider, model, system_prompt, question, history=history)
-            return answer_text, docs
+            text = call_model(provider, model, system_prompt, question,
+                              history=history, temperature=temperature)
+            return text, label
         except Exception as e:
             last_error = e
             continue  # silently try the next option in the fallback chain
 
-    # every option in the fallback chain failed
     raise RuntimeError(f"All providers failed. Last error: {last_error}")
+
+
+def generate_from_context(question, context, history=None, model_label=None, allow_fallback=True):
+    """The v1 generation step, unchanged: the grounded system prompt over a
+    context string, through the fallback chain. Shared by both engines so
+    any difference between them comes from retrieval, not wording (D-009).
+    Returns (answer_text, label_that_answered)."""
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+    return generate_with_fallback(system_prompt, question, history=history,
+                                  model_label=model_label, allow_fallback=allow_fallback)
+
+
+def format_context(docs):
+    """Join retrieved chunks into the context string the prompt expects."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+
+def answer_question(vectorstore, question, history=None, model_label=None, k=None,
+                    engine="linear", allow_fallback=True):
+    """Answer a question with one of two engines.
+
+    engine="linear"  — v1 pipeline: retrieve k chunks, generate once.
+    engine="agentic" — v2 LangGraph engine (graph.py): plan, retrieve,
+                       grade, capped query rewrite, generate (D-009).
+
+    Accepts prior conversation history (list of {"role", "content"} dicts,
+    Gradio's format) so follow-up questions can resolve pronouns.
+
+    Returns (answer_text, docs, trace). docs is the list of Document objects
+    used as context; trace is a dict describing what the engine did
+    (route, sub-queries, rewrites, LLM calls, latency, model that answered).
+    """
+    if engine == "agentic":
+        from graph import run_agentic  # imported lazily: langgraph only needed for this engine
+        return run_agentic(vectorstore, question, history=history,
+                           model_label=model_label, allow_fallback=allow_fallback)
+    if engine != "linear":
+        raise ValueError(f"Unknown engine: {engine}")
+
+    start = time.perf_counter()
+    docs, context = retrieve_context(vectorstore, question, k=k)
+    answer_text, answered_by = generate_from_context(question, context, history=history,
+                                                     model_label=model_label,
+                                                     allow_fallback=allow_fallback)
+    trace = {
+        "engine": "linear",
+        "route": None,
+        "sub_queries": [question],
+        "rewrites": 0,
+        "llm_calls": 1,
+        "latency_ms": round((time.perf_counter() - start) * 1000),
+        "answered_by": answered_by,
+        "steps": [f"retrieve:{len(docs)}", "generate"],
+    }
+    return answer_text, docs, trace
 
 
 if __name__ == "__main__":
@@ -199,9 +260,10 @@ if __name__ == "__main__":
 
     store = ingest()
     test_question = "What is Don Bradman's exact career Test batting average?"
-    answer_text, docs = answer_question(store, test_question)
+    answer_text, docs, trace = answer_question(store, test_question)
     print(f"\nQ: {test_question}")
     print(f"A: {answer_text}")
+    print(f"Trace: {trace}")
     print(f"\nSources used ({len(docs)} chunks):")
     for doc in docs:
         print(f"- {doc.metadata.get('source')}")
