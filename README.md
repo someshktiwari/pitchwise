@@ -140,7 +140,7 @@ Ask through the API:
 
 ```bash
 curl -X POST http://localhost:7860/ask -H "Content-Type: application/json" \
-  -d '{"question": "How many overs separate ODI and T20I powerplays?", "engine": "agentic"}'
+  -d '{"question": "Compare the founding years of the Cricket World Cup and the T20 World Cup.", "engine": "agentic"}'
 ```
 
 With Docker:

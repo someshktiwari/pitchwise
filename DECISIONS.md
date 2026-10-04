@@ -354,7 +354,8 @@ the failures revealed **two distinct failure types**, not one:
   likely fix.
 - **Type 2 — over-conservative refusal despite full retrieval** (e.g. "how
   many overs separate ODI and T20I powerplays," "which nations make up the
-  Fab Four"): `keyword_coverage` measured 100% on these — the retriever
+  Fab Four"; the powerplay case was later found to be a correct refusal,
+  see C-004): `keyword_coverage` measured 100% on these — the retriever
   found everything needed, but the stricter grounding prompt (C-003) still
   caused the model to decline simple arithmetic on two retrieved numbers,
   or to withhold a well-known fact (a player's nationality) because the
@@ -635,5 +636,49 @@ not a regression of the grounding fix itself, but a side effect worth
 tracking separately. See the update to D-007 below.
 
 ---
+
+## C-004 · Misdiagnosed Refusal: the ODI Powerplay Length Is Not in the Knowledge Base
+
+**What D-007 said:** the powerplay question ("How many overs separate ODI
+and T20I powerplays?") was filed as a Type 2 failure: an over-conservative
+refusal despite full retrieval, because `keyword_coverage` was 100%.
+
+**What the v2 agentic engine showed:** on this question the grade step
+reported `missing: ODI powerplay overs` three times in a row, across the
+original retrieval and two rewritten queries (10 chunks in the end), and
+the engine then generated a refusal:
+
+```
+plan:multi(2) -> retrieve:3q/7chunks -> grade:missing(ODI powerplay overs)
+-> rewrite:ODI powerplay overs count -> retrieve:4q/8chunks -> grade:missing(...)
+-> rewrite:ODI powerplay length -> retrieve:5q/10chunks -> grade:missing(...) -> generate
+```
+
+Checking the source confirmed it: `t20i-cricket.md` states the 6-over
+powerplay, but `odi-cricket.md` only says fielding restrictions apply "in
+different phases of the innings" and never gives an over count. The
+question has no answer in the knowledge base, so refusing was correct.
+
+**Root cause of the misdiagnosis:** this question's keywords are
+`["powerplay", "ODI", "T20I"]`. Those words appear in the retrieved chunks
+whether or not the needed number does, so 100% keyword coverage did not
+mean the facts were present. Keyword coverage is only as good as the
+keywords; for questions that combine numbers, the keywords should be the
+numbers themselves.
+
+**What changed:**
+- The README and `graph.py` demo example now use a question the knowledge
+  base can answer ("Compare the founding years of the Cricket World Cup and
+  the T20 World Cup").
+- The test question and its keywords are left unchanged for now, so v2
+  runs stay comparable with the v1 baseline. Rewriting under-specified
+  keywords (and adding the ODI powerplay fact, if wanted) is part of the
+  v3 knowledge-base expansion.
+
+**Why it's worth logging:** the agentic engine's grade step turned out to
+be a diagnostic tool as well as a retrieval step. It names the missing
+fact, which made a wrong conclusion in this document checkable in minutes.
+
+---
 *Author: Somesh Kant Tiwari*
-*Last updated: September 2026*
+*Last updated: October 2026*

@@ -281,6 +281,6 @@ if __name__ == "__main__":
 
     store = ingest()
     print(get_graph(store).get_graph().draw_mermaid())
-    q = "How many overs separate ODI and T20I powerplays?"
+    q = "Compare the founding years of the Cricket World Cup and the T20 World Cup."
     text, docs, trace = run_agentic(store, q)
     print(f"\nQ: {q}\nA: {text}\nTrace: {json.dumps(trace, indent=2)}")
