@@ -146,7 +146,7 @@ def build_demo():
                         "What is Don Bradman's exact career Test batting average?",
                         "Which player was named Player of the Match in the 2026 T20 World Cup final?",
                         "How many overs are bowled per day in a Test match?",
-                        "How many overs separate ODI and T20I powerplays?",
+                        "Compare the founding years of the Cricket World Cup and the T20 World Cup.",
                     ],
                     inputs=message_box,
                 )

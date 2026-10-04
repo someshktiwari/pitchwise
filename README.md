@@ -64,6 +64,16 @@ because 4 retrieved chunks often don't hold every fact a comparison needs
 fact is missing. Both engines share the same retrieval and the same grounded
 prompt, so any difference between them comes from the orchestration.
 
+![Agentic engine answering a comparison question](./screenshots/agentic-demo.png)
+
+The trace shown under the sources for that answer:
+
+```
+Engine: agentic   Route: multi   Rewrites: 0   LLM calls: 3   Latency: 5009 ms
+Search queries: Cricket World Cup founding year, T20 World Cup founding year
+Steps: plan:multi(2) -> retrieve:3q/10chunks -> grade:ok -> generate
+```
+
 ```mermaid
 graph TD;
     START([start]) --> plan;
