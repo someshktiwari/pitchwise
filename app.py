@@ -11,10 +11,9 @@ input box and to show which knowledge base chunks were used to ground
 each answer, via a two-column layout (chat on the left, retrieved
 context on the right).
 
-Startup behavior: the vector store is rebuilt fresh every time this app
-starts (DECISIONS.md D-005) — no persisted database, no external embedding
-API dependency (D-002) — so this file works the same locally and on
-Hugging Face Spaces' free tier without any extra setup.
+Startup behavior: ingest() loads the saved vector index, or builds and
+saves it when the knowledge base has changed (DECISIONS.md D-015). Embeddings
+are local (D-002), so no embedding API key is needed.
 """
 
 import gradio as gr

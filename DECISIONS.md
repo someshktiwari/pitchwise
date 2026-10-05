@@ -12,7 +12,7 @@ alternatives considered, the reasoning, and the trade-offs explicitly accepted.
 D-001 through D-008 — ingestion and generation pipeline decisions.
 D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 D-012 through D-013 — v3: token and cost accounting, request tracing.
-D-014 through D-016 — v3: knowledge base expansion, saved index, evaluation model choice.
+D-014 through D-017 — v3: knowledge base expansion, saved index, evaluation model choice, k=8 control.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -577,6 +577,12 @@ which is what debugging the agentic engine needs (why did this question
 take 7 calls?), and it is a tool teams already use, unlike a home-made
 dashboard.
 
+**Scores on traces:** evaluation runs attach the judge's accuracy,
+completeness and relevance (with the judge's feedback as a comment) and the
+keyword coverage to the trace that produced each answer, using the trace id
+recorded in the answer's trace dict. In Langfuse that turns "which answers
+scored 2 or less, and what did the engine do?" into a filter and a click.
+
 **Why optional:** the offline tests, CI and anyone cloning the repo must
 work without another account. Accounting (D-012) does not depend on
 tracing: token and cost numbers are always recorded in the trace and in
@@ -713,7 +719,8 @@ memory, which the tests use.
 
 **Date:** October 2026
 
-**Decision:** the v3 runs (linear and two agentic, on the v3 test set) use
+**Decision:** the v3 runs (linear and two agentic on the v3 test set, plus
+the k=8 control on its `spanning` questions, D-017) use
 the same pinned model and provider as v2, qwen3.8-27b on Groq's free tier,
 run day by day as the daily token limit allows. A paid route to the same
 model (OpenRouter) was added as an option but is not used for these runs.
@@ -743,6 +750,39 @@ day instead of falling back to another model.
 and the shared daily limit means the app should be tried on a different
 model (each Groq model has its own free allowance) while the runs are in
 progress.
+
+---
+
+## D-017 · The k=8 Control: Does Retrieving More Chunks Do What the Agent Does?
+
+**Date:** October 2026
+
+**Decision:** alongside the v3 runs, run the linear engine at k=8 on the 32
+`spanning` questions of the v3 test set, pinned to the same model, with
+`evaluation.eval --k 8 --category spanning --pin-model`. Compare it with the
+`spanning` rows of the v3 linear (k=4) and agentic runs, and report the
+result in EVAL_RESULTS whichever way it goes.
+
+**Why:** D-009 named "raise k" as the cheapest alternative to the agentic
+engine, and the v2 evaluation never ran it, so the v2 results only show that
+the agent beats k=4. With about 3,100 chunks the question matters more: more
+chunks could recover the missing facts, or could add near-duplicate noise.
+If k=8 matches the agent on `spanning` at one LLM call per question instead
+of about three, the graph is not earning its cost.
+
+**Why this way, not `compare_k.py`:** the eval harness already pins the
+model (D-010, C-005), records tokens and cost per question (D-012), traces
+and scores in Langfuse (D-013), and writes rows `compare_runs.py` can read.
+`--k` and `--category` were added to it, and the retrieval metrics use the
+same k as the answers, so a k=8 run reports k=8 keyword coverage. Limiting
+the run to `spanning` makes it 32 questions, under a fifth of a full run's
+177; at twice the retrieved context of a k=4 call, it costs roughly a third
+of the tokens of the v3 linear run.
+
+**Trade-off accepted:** one k=8 run on one category is a control, not a
+sweep; k=6 is not tested. The comparison with the k=4 linear run is across
+two runs, which carry run-to-run variance (v2's two agentic runs differed by
+up to 0.14 per category).
 
 ---
 

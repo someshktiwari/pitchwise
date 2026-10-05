@@ -295,8 +295,13 @@ def _answer_question(vectorstore, question, history=None, model_label=None, k=No
     obs.update_span(input={"question": question, "engine": engine})
     if engine == "agentic":
         from graph import run_agentic  # imported lazily: langgraph only needed for this engine
-        return run_agentic(vectorstore, question, history=history,
-                           model_label=model_label, allow_fallback=allow_fallback)
+        if k is not None:
+            raise ValueError("k applies to the linear engine only; the agentic engine retrieves "
+                             "RETRIEVER_K chunks per query and caps the merged set (D-009)")
+        text, docs, trace = run_agentic(vectorstore, question, history=history,
+                                        model_label=model_label, allow_fallback=allow_fallback)
+        trace["langfuse_trace_id"] = obs.current_trace_id()
+        return text, docs, trace
     if engine != "linear":
         raise ValueError(f"Unknown engine: {engine}")
 
@@ -317,7 +322,9 @@ def _answer_question(vectorstore, question, history=None, model_label=None, k=No
         "answered_by": answered_by,
         "routing_models": [],
         "steps": [f"retrieve:{len(docs)}", "generate"],
+        "retriever_k": k if k is not None else RETRIEVER_K,
         "usage": usage.summarise(calls),
+        "langfuse_trace_id": obs.current_trace_id(),
     }
     obs.update_span(output={"answer": answer_text, "trace": {k: v for k, v in trace.items() if k != "usage"}})
     return answer_text, docs, trace

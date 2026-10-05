@@ -10,7 +10,8 @@ incremental saving (see DECISIONS.md C-002) intended for the full
 — click a button, watch a progress bar, see the results.
 
 Builds its own vector store at startup, matching app.py's pattern (see
-DECISIONS.md D-005 — rebuilt fresh, not persisted).
+DECISIONS.md D-015 — the saved index is reused until the knowledge base
+changes).
 """
 
 import gradio as gr

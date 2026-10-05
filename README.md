@@ -133,8 +133,11 @@ runs on free tiers; list prices answer what it would cost on a paid plan.
 With Langfuse keys in `.env`, every question is also traced in
 [Langfuse](https://langfuse.com): one trace per question with a span per
 graph node, each search's query and results, and each LLM call's prompt,
-output, tokens and cost ([`DECISIONS.md` D-013](./DECISIONS.md)). Without
-keys, tracing is off and nothing else changes.
+output, tokens and cost ([`DECISIONS.md` D-013](./DECISIONS.md)).
+Evaluation runs also attach the judge's scores (accuracy, completeness,
+relevance) and keyword coverage to each answer's trace, so every answer
+the judge scored low can be filtered and opened in one click. Without keys,
+tracing is off and nothing else changes.
 
 ---
 
@@ -178,6 +181,8 @@ uv run python scripts/build_kb.py             # fetch the Wikipedia part of the 
 uv run python -m evaluation.build_tests_v3    # rebuild the v3 test set and check every keyword
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
     --results evaluation/results_v3_agentic_r1.jsonl   # a v3 run on the default model (D-016)
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model --k 8 \
+    --category spanning --results evaluation/results_v3_linear_k8_spanning.jsonl  # k=8 control (D-017)
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 
@@ -249,25 +254,25 @@ finished product. Concrete next steps, in rough priority order:
 
 - **Re-baseline on the v3 knowledge base** — run both engines on the
   177-question v3 test set against the expanded knowledge base (D-014),
-  with token and cost accounting on (D-012), and report what scale did to
+  with token and cost accounting on (D-012), plus the k=8 linear control
+  on the `spanning` questions (D-017), and report what scale did to
   retrieval, grounding and cost.
 - **Detect contradictions automatically** — C-007 was found by reading:
   check the knowledge base for conflicting claims about the same subject.
-- **A stronger knowledge base** — expand beyond the current 17 curated
-  documents with more players, tournaments, and historical depth, and use
-  the evaluation harness to verify retrieval quality holds as the knowledge
-  base grows (see [`DECISIONS.md`](./DECISIONS.md) D-001 and D-005 for why
-  this matters — chunk count and re-embedding cost both scale with content
-  size).
-- **Live deployment** — the FastAPI + Gradio service is containerised
-  (`Dockerfile`); deploying it to a Hugging Face Docker Space is the next
-  configuration step (no disk persistence or external embedding API is
-  needed — see [`DECISIONS.md`](./DECISIONS.md) D-002, D-005).
-- **The k=8 control** — check whether simply retrieving more chunks matches
-  the agentic engine on `spanning` at about a third of the LLM calls.
-  `evaluation/compare_k.py` already runs the `spanning` questions at k=4, 6
-  and 8; it needs the same model pinning as the main eval before its numbers
-  are comparable ([`DECISIONS.md`](./DECISIONS.md) D-007, D-009).
+- **Hybrid search or a reranker, only if the v3 runs call for it** — if the
+  bigger index measurably hurts retrieval, BM25 alongside vector search or a
+  cross-encoder reranker is the next step; adding either before the v3
+  results would blur the comparison D-016 protects.
+- **Optional: a live deployment** — the service is containerised
+  (`Dockerfile`) with the index built into the image (D-015), so a Hugging
+  Face Docker Space would need only its configuration and API keys as
+  secrets.
+
+## Licence
+
+Code: MIT ([`LICENSE`](./LICENSE)). The files under `knowledge-base/wikipedia/`
+are adapted from Wikipedia and licensed CC BY-SA 4.0; each one names its
+source article and revision.
 
 ---
 *Author: Somesh Kant Tiwari*

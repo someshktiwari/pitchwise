@@ -268,7 +268,7 @@ def _load_completed_questions():
 
 
 def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True,
-                        tests_file=None, model_label=None):
+                        tests_file=None, model_label=None, retriever_k=None, category=None):
     """Run retrieval + answer evaluation across the full test set.
 
     Saves each result to evaluation/results.jsonl as soon as it's computed
@@ -288,8 +288,16 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
     print(f"Engine: {engine} | model: {model_label or 'default'} | "
           f"fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
 
+    if retriever_k is not None and engine != "linear":
+        raise SystemExit("--k applies to the linear engine only (D-017)")
     tests = load_tests(tests_file)
-    print(f"Test set: {tests_file or 'evaluation/tests.jsonl'} ({len(tests)} questions)")
+    if category:
+        tests = [t for t in tests if t.category == category]
+        if not tests:
+            raise SystemExit(f"No questions in category {category!r}")
+    print(f"Test set: {tests_file or 'evaluation/tests.jsonl'}"
+          f"{f' [{category} only]' if category else ''} ({len(tests)} questions)"
+          f"{f' | retriever k={retriever_k}' if retriever_k is not None else ''}")
     already_done = _load_completed_questions() if resume else set()
     if already_done:
         print(f"Resuming: {len(already_done)} questions already completed, skipping those.\n")
@@ -304,13 +312,13 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
         print(f"[{i+1}/{len(tests)}] {test.category}: {test.question}")
 
         try:
-            retrieval_result = _retry(lambda: evaluate_retrieval(vectorstore, test))
+            retrieval_result = _retry(lambda: evaluate_retrieval(vectorstore, test, retriever_k=retriever_k))
             trace = {}
             with obs.trace_attributes(session_id=Path(RESULTS_FILE).stem,
                                       metadata={"category": test.category}):
                 answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(
-                    vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace,
-                    model_label=model_label))
+                    vectorstore, test, retriever_k=retriever_k, engine=engine,
+                    allow_fallback=allow_fallback, trace_out=trace, model_label=model_label))
         except Exception as e:
             print(f"  FAILED after retries: {e}\n")
             continue
@@ -336,7 +344,17 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
             "routing_models": trace.get("routing_models"),
             "usage": trace.get("usage"),              # answering: tokens, list-price cost, per call
             "judge_usage": trace.get("judge_usage"),  # grading, kept separate
+            "retriever_k": trace.get("retriever_k"),
+            "langfuse_trace_id": trace.get("langfuse_trace_id"),
         }
+        # The judge's scores on the trace that produced the answer (D-013), so
+        # low-scoring answers can be filtered and opened in Langfuse.
+        trace_id = trace.get("langfuse_trace_id")
+        obs.score(trace_id, "accuracy", answer_result.accuracy, comment=answer_result.feedback)
+        obs.score(trace_id, "completeness", answer_result.completeness)
+        obs.score(trace_id, "relevance", answer_result.relevance)
+        if test.keywords:
+            obs.score(trace_id, "keyword_coverage", retrieval_result.keyword_coverage / 100)
         results_file.write(json.dumps(result_record, ensure_ascii=False) + "\n")
         results_file.flush()  # write to disk immediately, don't wait for buffer
 
@@ -401,9 +419,14 @@ if __name__ == "__main__":
     parser.add_argument("--tests", help="test set file (default: evaluation/tests.jsonl, the frozen v2 set)")
     parser.add_argument("--model", help="model label to answer with (default: the app's default model); "
                                         "with --pin-model, the only model used")
+    parser.add_argument("--k", type=int, help="chunks the linear engine retrieves (default 4); "
+                                              "for the k=8 control (D-017)")
+    parser.add_argument("--category", choices=["direct_fact", "spanning", "temporal", "out_of_scope"],
+                        help="run one category of the test set only")
     args = parser.parse_args()
 
     store = ingest()
     run_full_evaluation(store, resume=not args.no_resume, engine=args.engine,
                         results_file=args.results, allow_fallback=not args.pin_model,
-                        tests_file=args.tests, model_label=args.model)
+                        tests_file=args.tests, model_label=args.model, retriever_k=args.k,
+                        category=args.category)

@@ -11,8 +11,9 @@ FastAPI service for Pitchwise (DECISIONS.md D-011). One process serves:
 Run locally:   uv run uvicorn api:app --port 7860
 In Docker:     see Dockerfile (same command, host 0.0.0.0)
 
-The vector store is built once, when app.py is imported (D-005: rebuilt
-fresh on every start, ~10 s for 81 chunks), and shared by the API and the UI.
+The vector store is loaded once, when app.py is imported (D-015: the saved
+index is reused until the knowledge base changes), and shared by the API
+and the UI.
 
 Endpoints are plain `def`, not `async def`: the LLM SDK calls are blocking,
 and FastAPI runs `def` endpoints in a thread pool. Blocking calls inside an

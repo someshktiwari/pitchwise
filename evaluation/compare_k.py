@@ -1,6 +1,11 @@
 """
 evaluation/compare_k.py
 
+Superseded for new runs by `evaluation.eval --k N --category spanning
+--pin-model` (DECISIONS.md D-017), which pins the model and records results
+in the same format as every other run. Kept because the September k
+comparison was made with it.
+
 Tests different retriever k values (how many chunks are retrieved per
 question) against the 'spanning' category specifically — the category
 where the post-C-003 evaluation run showed a real gap: several

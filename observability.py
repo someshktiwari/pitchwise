@@ -62,6 +62,24 @@ def trace_attributes(**fields):
     return _propagate_attributes(**fields)
 
 
+def current_trace_id():
+    """The Langfuse trace id of the request being handled, or None when
+    tracing is off. Lets the evaluation attach the judge's scores to the
+    exact trace that produced the answer."""
+    if not ENABLED:
+        return None
+    return get_client().get_current_trace_id()
+
+
+def score(trace_id, name, value, comment=None):
+    """Attach a numeric score to a trace (no-op without tracing or an id).
+    Used for the judge's accuracy, completeness and relevance, so a
+    low-scoring answer can be filtered and opened in one click."""
+    if ENABLED and trace_id:
+        get_client().create_score(name=name, value=float(value), trace_id=trace_id,
+                                  data_type="NUMERIC", comment=comment)
+
+
 def flush():
     """Send buffered traces. Called at the end of batch jobs (evaluation,
     mechanism check) and on API shutdown; the SDK also flushes in the

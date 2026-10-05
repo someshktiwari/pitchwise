@@ -124,3 +124,21 @@ def test_tracing_is_a_no_op_without_keys():
         obs.update_span(output=1)
         obs.update_generation(model="m")
     obs.flush()
+
+
+def test_k_applies_to_the_linear_engine_only(monkeypatch):
+    monkeypatch.setattr(base, "_call_provider", fake_provider({}))
+    _, _, trace = base.answer_question(FakeStore(), "q", k=8)
+    assert trace["retriever_k"] == 8
+    _, _, trace = base.answer_question(FakeStore(), "q")
+    assert trace["retriever_k"] == base.RETRIEVER_K
+    with pytest.raises(ValueError):
+        base.answer_question(FakeStore(), "q", engine="agentic", k=8)
+
+
+def test_scores_and_trace_ids_are_no_ops_without_tracing(monkeypatch):
+    monkeypatch.setattr(base, "_call_provider", fake_provider({}))
+    _, _, trace = base.answer_question(FakeStore(), "q")
+    assert trace["langfuse_trace_id"] is None
+    obs.score(None, "accuracy", 5)        # must not raise
+    obs.score("some-id", "accuracy", 5)   # tracing off: ignored
