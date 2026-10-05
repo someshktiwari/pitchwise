@@ -57,7 +57,7 @@ the next-fastest option rather than surfacing an error. Full reasoning:
 ## v2: Agentic engine (LangGraph)
 
 The evaluation showed exactly where the v1 pipeline falls short: compound
-questions (`spanning`) scored **4.1/5**, against 5.0/5 for single facts,
+questions (`spanning`) scored **4.1/5** in the September v1 run, against 5.0/5 for single facts,
 because 4 retrieved chunks often don't hold every fact a comparison needs
 ([`DECISIONS.md` D-007](./DECISIONS.md)). v2 adds a second engine, built with
 **LangGraph**, that plans, checks its own context, and retrieves again when a
@@ -102,14 +102,16 @@ Design rules:
   engine falls back to v1 behaviour instead of crashing or guessing.
 - **Bounded cost:** at most 2 rewrites, so the worst case is 7 LLM calls.
 - **Traceable:** every answer returns a trace (route, sub-queries, rewrites,
-  LLM calls, latency, model that answered), shown in the UI and the API.
+  LLM calls, latency, the model that answered and the model that routed),
+  shown in the UI and the API.
 
-**Measured:** on the 104-question harness, with one model pinned per run,
-`spanning` accuracy went from **4.2/5** (linear) to **5.0/5** in **both**
+**Measured:** on the 104-question harness, with the answer model pinned per
+run, `spanning` accuracy went from **4.2/5** (October linear baseline) to **5.0/5** in **both**
 agentic runs, while `direct_fact` stayed at 5.0/5. Of the 4 linear failures
 it fixed, 3 came from retrieval (final-context keyword coverage 0-50% to
 100%); the 4th was model variance. It averages 2.2 LLM calls per question
-against 1 for linear. Full table, failures and method:
+against 1 for linear. A k=8 linear control was planned but not run, so the
+comparison is against the default k=4. Full table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
@@ -146,9 +148,11 @@ uv run uvicorn api:app --port 7860            # FastAPI service + chat UI at htt
 uv run pytest tests/ -q                       # offline tests (no API keys needed)
 uv run python smoke.py                        # live check of both engines on 10 questions
 uv run python evaluator.py                    # visual evaluation dashboard
-uv run python -m evaluation.eval              # full 104-question run (linear engine)
+uv run python -m evaluation.eval --pin-model \
+    --results evaluation/results_linear_new.jsonl   # linear run, one model, its own results file
 uv run python -m evaluation.eval --engine agentic --pin-model \
-    --results evaluation/results_agentic_r1.jsonl   # agentic run, one model, own results file
+    --results evaluation/results_agentic_new.jsonl  # agentic run, one model, its own results file
+# Each run needs a new --results file: an existing file is resumed, not overwritten.
 uv run python -m evaluation.mechanism         # keyword coverage of the agentic engine's final context
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
@@ -229,11 +233,11 @@ finished product. Concrete next steps, in rough priority order:
   (`Dockerfile`); deploying it to a Hugging Face Docker Space is the next
   configuration step (no disk persistence or external embedding API is
   needed — see [`DECISIONS.md`](./DECISIONS.md) D-002, D-005).
-- **Retriever `k` tuning** — `evaluation/compare_k.py` is already built to
-  test different retriever settings against the specific gap the
-  evaluation harness surfaced (see [`EVAL_RESULTS.md`](./EVAL_RESULTS.md)
-  and [`DECISIONS.md`](./DECISIONS.md) D-007) — running it to completion
-  and applying the result is the most immediate of these next steps.
+- **The k=8 control** — check whether simply retrieving more chunks matches
+  the agentic engine on `spanning` at about a third of the LLM calls.
+  `evaluation/compare_k.py` already runs the `spanning` questions at k=4, 6
+  and 8; it needs the same model pinning as the main eval before its numbers
+  are comparable ([`DECISIONS.md`](./DECISIONS.md) D-007, D-009).
 
 ---
 *Author: Somesh Kant Tiwari*

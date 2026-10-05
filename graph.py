@@ -95,16 +95,19 @@ class RAGState(TypedDict):
     rewrites: int
     llm_calls: int
     trace: Annotated[list, operator.add]        # one entry appended per step
+    routing_models: Annotated[list, operator.add]  # model used by each plan/grade/rewrite call
     answer: Optional[str]
     answered_by: Optional[str]
 
 
-def call_llm(system, user, temperature=0):
-    """Utility call for plan, grade and rewrite: the default model with
-    fallback, at temperature 0 for repeatable routing decisions. The answer
-    itself goes through base.generate_from_context instead."""
-    text, _ = base.generate_with_fallback(system, user, temperature=temperature)
-    return text
+def call_llm(system, user, temperature=0, model_label=None, allow_fallback=True):
+    """Utility call for plan, grade and rewrite, at temperature 0 for
+    repeatable routing decisions. Uses the same model choice as the answer:
+    the selected model first, then fallback, or exactly one model when the
+    run is pinned (allow_fallback=False, D-010 / C-005).
+    Returns (text, label_of_the_model_that_answered)."""
+    return base.generate_with_fallback(system, user, temperature=temperature,
+                                       model_label=model_label, allow_fallback=allow_fallback)
 
 
 def parse_json(raw):
@@ -140,10 +143,15 @@ def build_graph(vectorstore):
     """Compile the agentic graph. The vector store is closed over by the
     retrieve node rather than stored in state, so state stays plain data."""
 
+    def route_llm(state, system, user):
+        return call_llm(system, user, model_label=state["model_label"],
+                        allow_fallback=state["allow_fallback"])
+
     def plan(state):
         user = json.dumps({"question": state["question"],
                            "history": state["history"][-HISTORY_TURNS:]}, default=str)
-        data = parse_json(call_llm(PLAN_PROMPT, user))
+        raw, used = route_llm(state, PLAN_PROMPT, user)
+        data = parse_json(raw)
         valid = (
             isinstance(data, dict)
             and data.get("route") in ("simple", "multi")
@@ -156,7 +164,7 @@ def build_graph(vectorstore):
         else:
             route, subs = "simple", [state["question"]]  # fail open to v1 behaviour
         return {"route": route, "sub_queries": subs,
-                "llm_calls": state["llm_calls"] + 1,
+                "llm_calls": state["llm_calls"] + 1, "routing_models": [used],
                 "trace": [f"plan:{route}({len(subs)})" + ("" if valid else ":fallback")]}
 
     def retrieve(state):
@@ -180,23 +188,26 @@ def build_graph(vectorstore):
     def grade(state):
         user = json.dumps({"question": state["question"],
                            "context": base.format_context(state["docs"])})
-        data = parse_json(call_llm(GRADE_PROMPT, user))
+        raw, used = route_llm(state, GRADE_PROMPT, user)
+        data = parse_json(raw)
         if isinstance(data, dict) and isinstance(data.get("sufficient"), bool):
             sufficient, missing, note = data["sufficient"], str(data.get("missing") or ""), ""
         else:
             sufficient, missing, note = True, "", ":fallback"  # fail open: generate as v1 would
         return {"sufficient": sufficient, "missing": missing,
-                "llm_calls": state["llm_calls"] + 1,
+                "llm_calls": state["llm_calls"] + 1, "routing_models": [used],
                 "trace": [("grade:ok" if sufficient else f"grade:missing({missing})") + note]}
 
     def rewrite(state):
         user = json.dumps({"question": state["question"], "missing": state["missing"],
                            "tried": state["sub_queries"]})
-        new = call_llm(REWRITE_PROMPT, user).strip().strip('"').strip()
+        raw, used = route_llm(state, REWRITE_PROMPT, user)
+        new = (raw or "").strip().strip('"').strip()
         if not new or new in state["sub_queries"] or new == state["question"]:
             new = state["missing"] or state["question"]
         return {"sub_queries": [new], "rewrites": state["rewrites"] + 1,
-                "llm_calls": state["llm_calls"] + 1, "trace": [f"rewrite:{new}"]}
+                "llm_calls": state["llm_calls"] + 1, "routing_models": [used],
+                "trace": [f"rewrite:{new}"]}
 
     def generate(state):
         text, answered_by = base.generate_from_context(
@@ -258,6 +269,7 @@ def run_agentic(vectorstore, question, history=None, model_label=None, allow_fal
         "rewrites": 0,
         "llm_calls": 0,
         "trace": [],
+        "routing_models": [],
         "answer": None,
         "answered_by": None,
     }, config={"recursion_limit": 20})  # safety net above MAX_REWRITES, not the cap itself
@@ -269,6 +281,7 @@ def run_agentic(vectorstore, question, history=None, model_label=None, allow_fal
         "llm_calls": final["llm_calls"],
         "latency_ms": round((time.perf_counter() - start) * 1000),
         "answered_by": final["answered_by"],
+        "routing_models": sorted(set(final["routing_models"])),
         "steps": final["trace"],
     }
     return final["answer"], final["docs"], trace

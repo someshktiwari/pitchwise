@@ -246,6 +246,7 @@ def answer_question(vectorstore, question, history=None, model_label=None, k=Non
         "llm_calls": 1,
         "latency_ms": round((time.perf_counter() - start) * 1000),
         "answered_by": answered_by,
+        "routing_models": [],
         "steps": [f"retrieve:{len(docs)}", "generate"],
     }
     return answer_text, docs, trace

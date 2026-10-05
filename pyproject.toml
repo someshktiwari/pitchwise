@@ -1,7 +1,7 @@
 [project]
 name = "pitchwise"
-version = "0.1.0"
-description = "Add your description here"
+version = "2.0.0"
+description = "Grounded cricket Q&A: linear and LangGraph agentic RAG engines, a FastAPI service, and a 104-question evaluation harness"
 authors = [
     { name = "Somesh Tiwari", email = "tiwari.17.somesh@gmail.com" }
 ]

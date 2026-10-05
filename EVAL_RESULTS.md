@@ -80,7 +80,10 @@ different problems:
 - **Over-conservative refusal** — a couple of cases where the retriever
   found everything needed, but the model still declined simple combination
   or inference over the retrieved facts. This is a prompt-strictness side
-  effect, not a retrieval problem — raising `k` won't fix it.
+  effect, not a retrieval problem — raising `k` won't fix it. *(October
+  update: one of these, the powerplay question, turned out to be a correct
+  refusal; the fact is not in the knowledge base. See
+  [`DECISIONS.md` C-004](./DECISIONS.md).)*
 
 This is a genuinely useful finding, not a flaw to hide: it shows the
 evaluation harness catching a second-order effect of its own first fix, and
@@ -96,9 +99,15 @@ improved."
 
 v2 added a LangGraph agentic engine (plan, grade, capped rewrite) beside the
 v1 linear pipeline ([`DECISIONS.md` D-009](./DECISIONS.md)). It was measured
-on the same 104 questions, in the same week, with one generation model pinned
-for every run (qwen3.8-27b on Groq, no fallback) and the same judge
-(Gemini 3.5 Flash Lite) ([`DECISIONS.md` D-010](./DECISIONS.md)).
+on the same 104 questions, in the same week, with one answer model pinned
+for every run (qwen3.8-27b on Groq, no fallback for the answer step) and the
+same judge (Gemini 3.5 Flash Lite) ([`DECISIONS.md` D-010](./DECISIONS.md)).
+In the agentic runs the routing calls (plan, grade, rewrite) were not pinned
+and could fall back to another model when qwen was rate-limited; this was
+found after the runs and fixed ([`DECISIONS.md` C-005](./DECISIONS.md)).
+
+Question numbers (Q66 and so on) are line numbers in
+`evaluation/tests.jsonl`, counting from 1.
 
 - **L1**: linear engine, one run (the baseline)
 - **A1, A2**: agentic engine, two independent runs
@@ -122,6 +131,10 @@ The pass rule was fixed before the runs: `spanning` at least 0.3 above the
 baseline in **both** agentic runs, `direct_fact` not below 4.9, at most one
 `out_of_scope` failure per run, and `temporal` within 0.3 of the baseline.
 Both runs pass.
+
+**Not measured:** a k=8 linear control was planned
+([`DECISIONS.md` D-009](./DECISIONS.md)) but not run, so these results show
+the agentic engine against the default k=4 only.
 
 ### Where the spanning gain came from
 
@@ -201,19 +214,30 @@ source chunks alongside the answer:
 
 ![Pitchwise chat interface](./screenshots/chat-interface.png)
 
-**Evaluation dashboard** (`evaluator.py`) — color-coded retrieval and answer
+**Evaluation dashboard** (`evaluator.py`, v1) — color-coded retrieval and answer
 metrics, broken down by category:
 
 ![Pitchwise evaluation dashboard](./screenshots/evaluation-dashboard.png)
+
+**Agentic engine** (`app.py`, v2) — an answer with its sub-queries and trace:
+
+![Agentic engine answering a comparison question](./screenshots/agentic-demo.png)
+
+**Linear vs agentic** (`evaluation/compare_runs.py`, v2) — the saved runs side by side:
+
+![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
 
 ---
 
 ## Try it yourself
 
 ```bash
-uv run python app.py                    # chat interface
-uv run python evaluator.py               # visual evaluation dashboard
-uv run python -m evaluation.eval         # full 104-question console run
+uv run python app.py                     # chat interface, with the linear/agentic toggle
+uv run python evaluator.py                # v1 visual evaluation dashboard (runs live)
+uv run python -m evaluation.compare_runs  # v2 comparison of the saved runs (no LLM calls)
+uv run python -m evaluation.mechanism     # final-context coverage for Q66, Q67, Q76, Q79
+uv run python -m evaluation.eval --engine agentic --pin-model \
+    --results evaluation/results_agentic_new.jsonl   # a new 104-question run, its own file
 ```
 
 ---

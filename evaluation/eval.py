@@ -317,6 +317,7 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
             "llm_calls": trace.get("llm_calls"),
             "latency_ms": trace.get("latency_ms"),
             "answered_by": trace.get("answered_by"),
+            "routing_models": trace.get("routing_models"),
         }
         results_file.write(json.dumps(result_record, ensure_ascii=False) + "\n")
         results_file.flush()  # write to disk immediately, don't wait for buffer

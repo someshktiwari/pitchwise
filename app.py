@@ -82,6 +82,7 @@ def format_trace(trace):
         f"- **LLM calls:** {trace.get('llm_calls')}",
         f"- **Latency:** {trace.get('latency_ms')} ms",
         f"- **Answered by:** {trace.get('answered_by')}",
+        f"- **Routing model:** {', '.join(trace.get('routing_models') or []) or 'n/a'}",
         f"- **Steps:** {' → '.join(trace.get('steps') or [])}",
     ]
     return "\n".join(lines)

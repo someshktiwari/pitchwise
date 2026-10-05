@@ -47,9 +47,9 @@ def llm(monkeypatch):
     script = {g.PLAN_PROMPT: [], g.GRADE_PROMPT: [], g.REWRITE_PROMPT: []}
     calls = []
 
-    def fake_call_llm(system, user, temperature=0):
+    def fake_call_llm(system, user, temperature=0, model_label=None, allow_fallback=True):
         calls.append(system)
-        return script[system].pop(0)
+        return script[system].pop(0), "fake-router"
 
     def fake_generate(question, context, history=None, model_label=None, allow_fallback=True):
         calls.append("GENERATE")
@@ -81,6 +81,7 @@ def test_1_simple_route_is_plan_then_generate(llm):
     assert answer == "answer"
     assert trace["route"] == "simple" and trace["llm_calls"] == 2
     assert trace["answered_by"] == "fake-model"
+    assert trace["routing_models"] == ["fake-router"]
 
 
 def test_2_malformed_plan_fails_open_to_simple(llm):
@@ -188,3 +189,26 @@ def test_12_no_fallback_tries_only_one_model():
     assert order == [base.FALLBACK_ORDER[0]]
     assert base.build_try_order("Gemini: 3.5-flash-lite", allow_fallback=False) == ["Gemini: 3.5-flash-lite"]
     assert len(base.build_try_order()) == len(base.FALLBACK_ORDER)
+
+
+def test_13_pinned_run_pins_routing_calls_too(monkeypatch):
+    """--pin-model must apply to plan/grade/rewrite as well as the answer (C-005)."""
+    seen = []
+
+    def fake_generate_with_fallback(system, user, history=None, model_label=None,
+                                    allow_fallback=True, temperature=None):
+        seen.append((model_label, allow_fallback))
+        if system == g.PLAN_PROMPT:
+            return plan_json("multi", ["a", "b"]), "pinned-model"
+        return grade_json(True), "pinned-model"
+
+    def fake_generate(question, context, history=None, model_label=None, allow_fallback=True):
+        seen.append((model_label, allow_fallback))
+        return "answer", "pinned-model"
+
+    monkeypatch.setattr(base, "generate_with_fallback", fake_generate_with_fallback)
+    monkeypatch.setattr(base, "generate_from_context", fake_generate)
+    g._GRAPHS.clear()
+    _, _, trace = g.run_agentic(FakeStore(), "q", model_label="X", allow_fallback=False)
+    assert seen == [("X", False)] * 3          # plan, grade, generate: all pinned to X
+    assert trace["routing_models"] == ["pinned-model"]
