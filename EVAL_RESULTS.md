@@ -113,6 +113,11 @@ for every run (qwen3.8-27b on Groq, no fallback) and the same judge
 | `out_of_scope` | 15 | 4.7 | 5.0 | 4.9 |
 | Overall | 104 | 4.8 | 5.0 | 4.9 |
 
+![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
+
+*From `evaluation/compare_runs.py`, which reads the saved results files and
+makes no LLM calls.*
+
 The pass rule was fixed before the runs: `spanning` at least 0.3 above the
 baseline in **both** agentic runs, `direct_fact` not below 4.9, at most one
 `out_of_scope` failure per run, and `temporal` within 0.3 of the baseline.
@@ -145,10 +150,17 @@ mechanism check, so it is counted as model variance, not as an engine gain.
 | LLM calls per question, average | 1 | 2.2 |
 | LLM calls per `spanning` question | 1 | 3.2 |
 | `spanning` questions routed to `multi` | n/a | 16 of 20 |
-| Questions that used a rewrite | n/a | 2 of 104 |
+| Questions that used a rewrite | n/a | 2 of 104 (2 of 104 in A1 too) |
+| Average latency per question, as recorded | 1.8 s | 7.1 s (A1), 2.8 s (A2) |
 
 Simple questions take 2 calls (plan + generate) and skip grading, which is
 why `direct_fact` stayed at 5.0.
+
+**Latency is reported but not used as a result.** All runs shared one free
+Groq quota, and the agentic runs were slowed by rate-limit waits as the
+daily token limit filled up: the same engine averaged 7.1 s in A1 and 2.8 s
+in A2. LLM calls per question are the stable measure of cost; a real
+latency comparison needs a paid tier or a dedicated benchmark.
 
 ### Remaining failures, reported as found
 

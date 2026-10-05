@@ -112,6 +112,8 @@ it fixed, 3 came from retrieval (final-context keyword coverage 0-50% to
 against 1 for linear. Full table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
+![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
+
 ---
 
 ## Evaluation
