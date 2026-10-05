@@ -31,7 +31,7 @@ verified with real data. Details in [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 ## Architecture
 
 ```
-knowledge-base/          17 curated markdown documents
+knowledge-base/          17 curated documents + 132 Wikipedia articles (about 3,100 chunks)
        │
        ▼
    ingest.py              chunk (header-aware) → embed (local, free) → vector store
@@ -175,6 +175,9 @@ uv run python -m evaluation.eval --engine agentic --pin-model \
 # Each run needs a new --results file: an existing file is resumed, not overwritten.
 uv run python -m evaluation.mechanism         # keyword coverage of the agentic engine's final context
 uv run python scripts/build_kb.py             # fetch the Wikipedia part of the knowledge base (needs internet)
+uv run python -m evaluation.build_tests_v3    # rebuild the v3 test set and check every keyword
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
+    --results evaluation/results_v3_agentic_r1.jsonl   # a v3 run
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 
@@ -222,7 +225,9 @@ pitchwise/
 │   ├── mechanism.py             final-context keyword coverage for the agentic engine
 │   ├── compare_runs.py          dashboard comparing saved evaluation runs
 │   ├── results_*.jsonl          saved runs: linear baseline and two agentic runs
-│   └── tests.jsonl               104 test questions
+│   ├── build_tests_v3.py        builds and checks the v3 test set
+│   ├── tests_v3.jsonl           177 questions for the expanded knowledge base
+│   └── tests.jsonl               104 test questions (v2, frozen)
 ├── DECISIONS.md               every architecture decision, dated and reasoned
 └── EVAL_RESULTS.md            evaluation methodology and results, in plain terms
 ```
@@ -242,11 +247,12 @@ existing for show.
 Pitchwise is presented here as a working, evaluated project — not a
 finished product. Concrete next steps, in rough priority order:
 
-- **Fix what the v2 runs exposed** — restructure the knowledge-base
-  sections that hide facts under generic headings (the Ben Stokes
-  retirement question failed in every run for this reason), correct the
-  mislabelled and under-specified test questions found in C-004, and
-  re-baseline both engines.
+- **Re-baseline on the v3 knowledge base** — run both engines on the
+  177-question v3 test set against the expanded knowledge base (D-014),
+  with token and cost accounting on (D-012), and report what scale did to
+  retrieval, grounding and cost.
+- **Detect contradictions automatically** — C-007 was found by reading:
+  check the knowledge base for conflicting claims about the same subject.
 - **A stronger knowledge base** — expand beyond the current 17 curated
   documents with more players, tournaments, and historical depth, and use
   the evaluation harness to verify retrieval quality holds as the knowledge

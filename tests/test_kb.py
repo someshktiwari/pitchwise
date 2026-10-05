@@ -165,3 +165,34 @@ def test_saved_index_is_reused_until_the_knowledge_base_changes(tmp_path, monkey
     rebuilt = ingest.ingest(persist_directory=str(index), embeddings=fake)  # same process, no clash
     assert rebuilt._collection.count() == n
     assert [p.name for p in index.iterdir()] == [ingest.index_path(index, second).name]  # old one removed
+
+
+def test_table_only_chunks_are_dropped_but_short_facts_are_kept():
+    assert not ingest.has_real_text("**Finals.**")
+    assert not ingest.has_real_text("Last updated 25 October 2025.")
+    assert not ingest.has_real_text("All records correct as of 11 January 2026.")
+    assert ingest.has_real_text("Some informal baseball games use variations of the follow-on.")
+    assert ingest.has_real_text("The six teams are all owned by existing IPL franchise owners.")
+
+
+def test_markup_debris_is_cleaned_but_years_in_brackets_are_kept():
+    assert build_kb.clean_line(
+        "%5B%5BWikipedia%3ATemplates%5D%5D{{{CRITERION}}} The Pakistan Super League") == "The Pakistan Super League"
+    assert build_kb.clean_line("he made 426 runs.[2] Later") == "he made 426 runs. Later"
+    assert build_kb.clean_line("during the [2003] World Cup") == "during the [2003] World Cup"
+    assert build_kb.clean_line("^ The win percentage excludes no-results") == ""
+
+
+def test_v3_test_set_is_grounded_in_the_knowledge_base():
+    """Every keyword of every answerable v3 question appears in the
+    knowledge base (the v3 builder checks each against its source file)."""
+    import json
+    from evaluation.test import TEST_FILE_V3
+    text = "\n".join(p.read_text(encoding="utf-8") for p in ingest.knowledge_base_files()).lower()
+    tests = [json.loads(l) for l in Path(TEST_FILE_V3).read_text(encoding="utf-8").splitlines() if l.strip()]
+    assert len(tests) == 177
+    for t in tests:
+        if t["category"] == "out_of_scope":
+            assert t["keywords"] == []
+        for k in t["keywords"]:
+            assert k.lower() in text, (t["question"], k)

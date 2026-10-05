@@ -631,6 +631,35 @@ the condition a real deployment faces.
   title is a curated subject, so the knowledge base never holds two versions
   of the same facts.
 
+**What the first build produced (October 2026):** 132 of the 133 listed
+articles (one title, "James Anderson", was a disambiguation page and is now
+"James Anderson (cricketer)"), so 149 documents and 3,077 chunks: 81 curated
+and 2,996 from Wikipedia, against 81 in v2. Two clean-ups came from reading
+the output rather than trusting it:
+- *Table-only sections were dropped.* The plain-text extract leaves out
+  tables, so some sections became a heading and nothing else ("**Finals.**",
+  "Last updated 25 October 2025."). 34 such chunks would have competed for
+  retrieval with no facts in them; `ingest.py` now drops any Wikipedia chunk
+  with under 40 characters of real text.
+- *Markup debris was removed.* Two articles began with URL-encoded template
+  links, and several kept citation markers ("[62]") or footnote lines.
+  `build_kb.clean_line` removes them (four-digit years in brackets, such as
+  "[2003]", are kept), and the existing files were cleaned with the same
+  function; a word-level diff against the originals confirmed only debris
+  was removed.
+
+**The v3 test set** (`evaluation/tests_v3.jsonl`, 177 questions, built and
+checked by `evaluation/build_tests_v3.py`): 113 direct_fact, 32 spanning,
+16 temporal and 16 out_of_scope. It keeps the v2 questions except where the
+new knowledge base changed the right answer: seven out-of-scope questions
+became answerable and were relabelled or reworded, one was dropped (the
+"fastest T20I century", where the only claim in the knowledge base is a 2017
+record that no longer stands), and the Ben Stokes questions follow C-007.
+New out-of-scope questions name a subject the knowledge base *mentions*
+(Nathan Lyon, Lasith Malinga, Major League Cricket) but ask for a fact it
+does not contain, a harder test of grounding than a subject it never
+mentions. Every keyword is checked against its source document.
+
 **Licensing:** Wikipedia text is CC BY-SA 4.0. Every generated file records
 its title, the exact revision used (an `oldid` link), the retrieval date and
 the licence in front matter, which `ingest.py` keeps as chunk metadata.
@@ -916,6 +945,49 @@ results are not re-scored with it; the v3 test runs include the fix.
 **Prevention:** the Wikipedia conversion (D-014) builds every heading as
 "Subject: Section" and prefixes every chunk with it, so this mistake cannot
 recur in generated documents.
+
+---
+
+## C-007 · A Curated Document Went Out of Date: Ben Stokes Retired in 2026
+
+**What was found:** after the Wikipedia articles were added, the knowledge
+base contradicted itself. The curated Ben Stokes document (written from
+mid-2026 information) said he "continues to play and captain in Test
+cricket"; Joe Root's article (September 2026 revision) said Root had been
+reappointed Test captain in 2026, and Brendon McCullum's said he had been
+sacked as Test coach in July 2026.
+
+**Checked against two independent sources:** Ben Stokes's last Test was the
+third Test against New Zealand (25–29 June 2026), in a home series England
+lost 2–1, and he retired from international cricket; Joe Root was
+reappointed Test captain from the August 2026 series against Pakistan.
+
+**Fix:** the Stokes document now says he captained England's Test side from
+April 2022 until retiring from international cricket in 2026, and names
+Root as his successor. Only those facts changed. In the v3 test set, the
+three Stokes captaincy and retirement questions (v2 Q21, Q83, Q88) have
+updated reference answers; v2 Q88 now asks who succeeded him, which needs
+both the Stokes document and Root's article.
+
+**Why it matters:** curated documents carry an "as of" date and go stale
+without anyone noticing; a second, independently dated source exposed it.
+A knowledge base needs a way to find its own contradictions, and this one
+was found by reading, not by a check. An automated check for conflicting
+claims about the same subject is a future step.
+
+---
+
+## C-008 · A v2 Keyword That Could Never Match
+
+**What was found:** while checking every v3 keyword against the knowledge
+base, v2 Q15 ("How many Test runs did Sachin Tendulkar score?") turned out
+to list its answer twice, as "15,921" and "15921". The documents only use
+"15,921", so keyword coverage for Q15 could never exceed 67%, and that is
+what every v1 and v2 run reported.
+
+**Fix:** the v3 set drops the unmatched form. The v2 set is left as it was
+so the v2 results stay reproducible; the effect on v2's averages is one
+question's retrieval coverage, not any answer score.
 
 ---
 *Author: Somesh Kant Tiwari*

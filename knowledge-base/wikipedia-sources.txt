@@ -50,7 +50,7 @@ players: MS Dhoni
 players: Yuvraj Singh
 players: Kevin Pietersen
 players: Alastair Cook
-players: James Anderson
+players: James Anderson (cricketer)
 players: Stuart Broad
 players: Brendon McCullum
 players: Chris Gayle

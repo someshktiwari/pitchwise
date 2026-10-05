@@ -1,0 +1,96 @@
+---
+title: Marylebone Cricket Club
+source: https://en.wikipedia.org/w/index.php?title=Marylebone_Cricket_Club&oldid=1377886710
+revision_timestamp: 2026-10-01T19:18:50Z
+retrieved: 2026-10-05
+licence: CC BY-SA 4.0, Wikipedia contributors. Adapted: reformatted into markdown and trimmed.
+---
+# Marylebone Cricket Club
+
+## Marylebone Cricket Club: Overview
+
+The Marylebone Cricket Club (MCC) is an English cricket club founded in 1787, whose Lord's headquarters are dubbed "the Home of Cricket".
+Lord's Cricket Ground has been owned since Victorian times by MCC, which served as cricket's governing body from 1788 to 1909 and retains considerable global influence. Thomas Lord first established a cricket ground at Dorset Fields in Marylebone. Lord's Cricket Ground relocated in 1814 to nearby St John's Wood, historically in Middlesex and now in the City of Westminster, London NW8.
+In 1788, the MCC assumed oversight for the Laws of Cricket, issuing a revised version that year. Changes to these Laws are nowadays determined by the International Cricket Council (ICC), with copyright retained by MCC. Established in 1909, the ICC was administered for eighty years by the Secretary to Marylebone Cricket Club and chaired by the MCC President ex officio.
+MCC was given responsibility for organising England Test cricket overseas tours commencing with the 1903–04 tour of Australia and ending with its 1976–77 tour of India, both being victorious. England also played non-international matches overseas under the auspices of MCC.
+In 1993, MCC transferred global cricket governance to the ICC, devolving domestic administration to the Test and County Cricket Board (TCCB).
+Retaining first-class status when MCC plays first-class opposition, the club continues to promote the game by fielding ad hoc MCC XIs from a pool of circa 2,000 playing members, varying standards accordingly.
+The outgoing MCC president, the Lord King of Lothbury , nominated Ed Smith as his successor for 2026.
+
+## Marylebone Cricket Club: History and role
+
+The origin of MCC was as a gentlemen's club that had flourished through most of the 18th century, including, at least in part, an existence as the original London Cricket Club, which played at the HAC cricket ground in the mid-1700s. Many of its members left for the Hambledon Club during the 1770s and then, in the early 1780s, returned to London's environs when the White Conduit Club began playing cricket in Islington. It is not known for certain when the White Conduit was established but it seems to have been after 1780 and certainly by 1785. According to Sir Pelham Warner, it was formed before 1782 as an offshoot from a West End convivial club called the Je-ne-sais-Quoi, some of whose members frequented the White Conduit House in Islington and played matches on the neighbouring White Conduit Fields, a prominent venue for cricket in the 1720s.
+Arthur Haygarth states in Scores and Biographies that "the Marylebone Club was founded in 1787 from White Conduit members" but the date when it was established "could not be found". This gentlemen's club convened for multi-purpose social meetings at the Star & Garter Inn on Pall Mall. Having undertaken to draft the Laws of Cricket at various times, most notably in 1744 and 1774, the White Conduit soon vested such law-making with the MCC as the final repose of cricketing gentlemen. At the White Conduit Club's outset, its leading lights were George Finch, 9th Earl of Winchilsea and Nottingham (1752–1826) and Colonel the Hon. Charles Lennox (1764–1819), who later became the 4th Duke of Richmond. The White Conduit was nominally an exclusive club that only "gentlemen" could play for, but the club did engage professionals and one of these was Thomas Lord, recognised for his business acumen (being a successful wine merchant) "as well as his bowling ability".
+The New Club may have continued there, save that White Conduit Fields was an open area where the public, including rowdier types, could watch cricket matches and voice their opinions on the play and players. The White Conduit members were not amused by such interruptions and decided to seek their own enclosed venue. Lord Winchilsea and Colonel Lennox asked Lord to find a new ground offering him a guarantee against any losses he may suffer in the venture. Lord took a lease from the Portman Estate on Dorset Fields where Dorset Square is now sited; and prepared the ground opening in 1787. Initially called the "New Cricket Ground", being nearby "the New Road" in Marylebone when the first-known match was played there on 21 May, by the end of July 1787, it was known as Lord's. As it was in Marylebone, the White Conduit members who relocated there soon decided to rename themselves the "Mary-le-bone Club". The exact date of MCC's foundation is lost but seems to have been sometime in the late spring or the summer of 1787. On 10 & 11 July 1837, a South v North match was staged at Lord's to commemorate the MCC Golden Jubilee. Warner described it as "a Grand Match to celebrate the Jubilee of the Club" and reproduced the full scorecard.
+On 25 April 1787, London's Morning Herald newspaper carried a notice: "The Members of the Cricket Club are desired to meet at the Star & Garter, Pall Mall, on Mon., April 30. Dinner on table exactly at half past five o'clock. N.B. The favour of an answer is desired". Its agenda unspecified, only three weeks later on Saturday, 19 May, the Morning Herald advertised: "A grand match will be played on Monday, 21 May in the New Cricket Ground, the New Road, Mary-le-bone, between eleven Noblemen of the White Conduit Club and eleven Gentlemen of the County of Middlesex with two men given, for 500 guineas a side. The wickets to be pitched at ten o'clock, and the match to be played out". No post-match report has yet been found but, as G. B. Buckley states, it was "apparently the first match to be played on Lord's new ground".
+A total of eight matches are known to have been played at Lord's in 1787, one of them a single-wicket event. The only one featuring the Mary-le-bone Club took place on Monday, 30 July. It was advertised in The World on Friday, 27 July 1787: "On Monday, 30 July will be played (at Lord's) a match between 11 gentlemen of the Mary-le-bone Club and 11 gentlemen of the Islington Club". "This is the earliest notice of the Marylebone Club" according to Buckley and as with Lord's inaugural fixture, no post-match report of MCC's inaugural game survives.
+
+## Marylebone Cricket Club: Grounds
+
+There have been three Lord's cricket grounds: the original on the Portman Estate and two on the Eyre Estate. All three sites lie to the west of Regent's Park in London. Thomas Lord leased the original ground, now referred to as Lord's Old Ground, from the Portman Estate in 1787 and MCC played there until 1810 when Lord, after objecting to a rent increase, decided on terminating the lease to lift his turf and move out. Over 200 matches were known to be played there, mostly involving MCC and/or Middlesex XIs. Lord's Old Ground was on the site now occupied by Dorset Square, just east of Marylebone Station and west of Baker Street. To commemorate MCC's association, a plaque was unveiled at Dorset Square on 9 May 2006 by Sir Andrew Strauss.
+With advance knowledge of the Portman Estate's intention to lease its land for building houses commanding much higher rents of over £600 per annum, on 15 October 1808, Lord secured two fields on the North Bank area of the St John's Wood Estate, which belonged to Walpole Eyre (1773–1856), a local landowner after whom Eyre's Tunnel on the Regent's Canal was named. Lord negotiated with the Eyres a rent of only £54 per annum for a term of eighty years, free of both land taxes and tithes.
+The new ground on the Eyre Estate was available from 1809 and so Lord had two cricket fields at his disposal for the 1809 and 1810 seasons. This North Bank ground was sub-let to St John's Wood Cricket Club which eventually merged with MCC. Lord formally took over management of this second ground on 8 May 1811 there relaying his turf from the Old Ground. He did this so that "the noblemen and gentlemen of the MCC should be able to play on the same footing as before". According to Warner, Lord's relocation proved unpopular among many MCC members with the upshot that the club played no matches there throughout 1811 and 1812. Whilst its situation may have not been ideal, cricket generally was in decline at the time because of the Napoleonic Wars; the Association of Cricket Statisticians and Historians (the ACS) asserts that "(from) 1810 to 1814 the game was all but dead", largely because of the War and "the very real threat of civil unrest in England". This second venue is generally known as Lord's Middle Ground. In the three years that Lord leased it, only six matches were known to have taken place, with just three (all in 1813) involving the MCC. Although the exact location of Lord's Middle Ground remains uncertain, it is understood to have been at North Bank to the north end of Lisson Grove where the Regent's Canal cut through. Thus situated partially on the canal's route somewhere in the area now bounded by Lisson Grove (the B507) to south-west, Lodge Road to north-west, Park Road (the A41) to north-east and the Regent's Canal to south-east, this cricket field was no further than 300 yards (270 m) from the present Lord's Cricket Ground.
+Lord was forced to abandon plans for his Middle Ground after Parliament decreed the new canal's route in 1813. Lord, via his protégé Lord Frederick Beauclerk, approached the Eyre family who agreed to lease another plot nearby in St John's Wood, but at an increased rent of £100 per annum. Accepting the Eyres' new terms, Lord again relocated his turf which was re-laid in time for the start of the 1814 season. This third ground remains Lord's present home to MCC for over 200 years.
+
+## Marylebone Cricket Club: Grounds - Alternative grounds
+
+From 1996 to 2008, the MCC played nine first-class and three List A matches against touring teams at cricket grounds other than Lord's:
+
+Denis Compton Oval, Shenley, Hertfordshire: (1996–1999)
+1996 vs South Africa A (first-class)
+1996 vs Pakistan (list A)
+1997 vs Pakistan A (first-class)
+1999 vs Sri Lanka (first-class)
+University Parks, Oxford, Oxfordshire: (2000)
+2000 vs New Zealand A (first-class)
+Savile Park, Castleford, Yorkshire: (2000)
+2000 vs Zimbabwe (list A)
+Arundel Castle Cricket Ground, Sussex: (2001–2007)
+2001 vs Australia (first-class)
+2004 vs West Indies (first-class)
+2007 vs Sri Lanka A (first-class)
+Queen's Park, Chesterfield, Derbyshire: (2002)
+2002 vs Sri Lanka (first-class)
+The Racecourse, Durham: (2007–2008)
+2007 vs West Indies (first-class)
+2008 vs Bangladesh A (list A)
+
+## Marylebone Cricket Club: Laws of Cricket
+
+MCC maintains responsibility for, and remains copyright holder of, the Laws of Cricket. Its Laws Sub-Committee is responsible for debating and drafting changes to the Laws, with the Main Committee then voting on any proposed amendments.
+
+## Marylebone Cricket Club: Membership
+
+MCC has 18,000 full members and 5,000 associate members. Full Members enjoy voting rights and have access to the Pavilion and other stands at Lord's Cricket Ground for all matches played there; Associate Members' privileges are more restricted and vary on a case-by-case basis, but in broad terms they can attend most matches except major internationals.
+MCC members did not allow female membership until 1998, with previous club ballots on change failing to achieve the requisite two-thirds majority for implementation. The move to change was spearheaded by Rachael Heyhoe Flint who applied as "R Flint" to slip under the radar into the male-only application system. When Colin Ingleby-Mackenzie, a longstanding advocate for women's membership, assumed the MCC Presidency in 1996 he led a two-year campaign to convince the membership to vote in favour of change. In September 1998 a 70% majority of members voted to allow female membership, so ending 212 years of male exclusivity, and 10 honorary life members were immediately admitted, including Baroness Heyhoe Flint. Until this time, the Queen, as club patron, was the only woman (other than domestic staff) permitted to enter the Pavilion during play. In February 1999, the first women, a group of five, were invited to join as playing members.
+To join the candidates' waiting list for MCC membership one must be proposed by a full member (who can make one nomination per year) who details the prospective candidate's cricketing ability/experience/knowledge etc, corroborated with the nominee's own statement accordingly. If MCC deems the nomination form satisfactory, prospective candidates are invited to attend an interview at Lord's with two MCC Committee Members (comprising all MCC Sub-Committees; MCC Committee; MCC Out-Match Representatives; and MCC's Current, Past and Designate-President). As demand for membership always outstrips supply each year, there continues to be a substantial waiting list for Full Ordinary Membership, currently around 27 years. There are, however, ways to hasten the time it takes to become a full member: one may qualify as a Playing Member, or Out-Match Member (although this carries none of the privileges of membership, apart from being able to play for the club).
+In addition, membership rules allow a certain number of people each year to be elected ahead of their turn; beneficiaries have included Sir Mick Jagger and in 2018 then-Prime Minister, Theresa May. MCC also awards limited honorary membership to people who have distinguished themselves in cricket. The club recognises achievement in women's cricket with, for example, Charlotte Edwards an inductee in 2012.
+
+## Marylebone Cricket Club: Controversies
+
+In 2005, the MCC was criticised (including by a few of its own members) for siding with the England and Wales Cricket Board (ECB) over the latter's decision to award television rights for Test cricket to British Sky Broadcasting, thus removing Test cricket from terrestrial television. The then-Secretary and Chief Executive of MCC, Roger Knight, represented the club on the board of the ECB and was party to this decision, prior to which Test cricket had been shown free to viewers on British television for over half a century.
+MCC has the option of allowing members and other spectators to continue to bring a limited amount of alcoholic drinks into the ground at all matches. The ICC, was attempting to implement a ban on this practice at all international matches around the world. MCC opted to write to the ICC on an annual basis to seek permission for members and spectators to import alcohol into Lord's.
+The Secretary & Chief Executive of the club has a seat on the administrative board of the ECB and it is believed that Keith Bradshaw (Secretary & Chief Executive 2006–11) may have influenced the removal from office of England Coach Duncan Fletcher in April 2007.
+In 2012, MCC made headlines over a redevelopment plan, Vision for Lord's, that would have increased capacity but included construction of residential flats on some of the MCC site. Internal strife over the process of making a decision on the proposal led to the resignation of former Prime Minister Sir John Major from MCC's Main Committee.
+In 2022, Guy Lavender, Secretary & Chief Executive of MCC, announced that the annual one-day Oxford v Cambridge and Eton v Harrow matches, both of which have been played at Lord's since the early 19th century, would no longer be held at the ground, so as to make room in the fixture list for the finals of competitions for all universities and schools in pursuit of greater diversity. Following opposition from a majority of its membership, the club decided that the matches would continue to be held at Lord's until 2023 to allow time for further consultation. In March 2023 it was announced that the fixtures would continue to be played at Lord's until at least 2027, following which there would be a review and a possible vote in 2028 on whether these historic matches should remain at Lord's.
+During the Second Test of the 2023 Ashes series at Lord's, the MCC apologised to Cricket Australia and suspended three members for confronting Australian players walking through the Long Room. Video emerged of MCC members shouting abuse at Australian players after Jonny Bairstow was stumped in controversial circumstances, despite his dismissal being fair and legal.
+
+## Marylebone Cricket Club: Matches
+
+MCC men's and women's teams play domestic matches throughout the spring and summer against teams from universities, schools, the Armed Forces and invitational teams such as the Duchess of Rutland's XI. The men's team tour internationally four times per year, and the women's team tour every other year.
+
+## Marylebone Cricket Club: Coaching
+
+MCC has long had a deep involvement in coaching cricket. The club's head coach leads an extensive operation involving the running of an indoor-cricket school and a team of coaches in England and around the world. The club has traditionally produced a coaching manual, the MCC Cricket Coaching Book, a bible for cricket skills, and runs training programmes for young cricketers, including many at its Lord's Indoor Centre. MCC continues to tour around England, playing matches against various state and private schools. This tradition has been followed since the 19th century. The club has other sporting interests with both a real tennis and a squash court on site at Lord's, and golf, chess, bridge and backgammon societies.
+
+## Marylebone Cricket Club: Club colours
+
+Since Edwardian times at the beginning of the 20th century, the Marylebone Cricket Club organised England Test matches, touring overseas officially as MCC up till the 1976/77 tour of India. England cricketers last wore MCC's distinctive red and yellow-striped colours during the tour of New Zealand in 1996/97.
+The true provenance of the club colours is (and probably will remain) unsubstantiated, but the MCC originally sported sky blue until well into the 19th century.
+
+The Marylebone Cricket Club eventually settled on its now well-recognised colours of scarlet and gold, otherwise described as "bacon and egg". One purported theory is that they derive from the J&W Nicholson & Co. gin-distilling family, whose chairman and MCC Committee member, William Nicholson (1825–1909) financed the purchase of Lord's freehold in 1866.
+More likely is that MCC's red and gold colours have evolved from the heraldic livery (racing) colours of key noble patrons, such as the Dukes of Richmond and kinsman, Lord Frederick Beauclerk, President of Marylebone Cricket Club in 1826.
+
+## Marylebone Cricket Club: Image
+
+Previously perceived as too traditional and elitist, MCC has adapted with the times making concerted efforts to modernise. "It would be overstating things to claim that the MCC has come full circle," admitted Andrew Miller at the beginning of October 2008, "but at a time of massive upheaval in the world game, .. [its] colours cease to represent everything that is wrong with cricket, and instead have become a touchstone for those whose greatest fear is the erosion of the game's traditional values".

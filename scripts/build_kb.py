@@ -67,6 +67,13 @@ CURATED_SUBJECTS = {
 }
 
 HEADING = re.compile(r"^(={2,6})\s*(.*?)\s*\1\s*$")
+# Debris the plain-text extract can leave behind: URL-encoded template links
+# ("%5B%5BWikipedia%3A...%5D%5D"), unexpanded template parameters
+# ("{{{CRITERION}}}") and citation markers ("[62]"; four-digit years such as
+# "[2003]" are kept).
+_TEMPLATE_LINK = re.compile(r"%5B%5B.*?%5D%5D")
+_TEMPLATE_PARAM = re.compile(r"\{\{\{[^}]*\}\}\}")
+_CITATION = re.compile(r"\[\d{1,3}\]")
 
 
 def read_sources(path=SOURCES_FILE):
@@ -123,6 +130,18 @@ def fetch_article(title, retries=3):
     }
 
 
+def clean_line(line):
+    """One line of extract text without markup debris. Footnote lines
+    ("^ The win percentage excludes...") are dropped entirely."""
+    line = line.strip()
+    if line.startswith("^ "):
+        return ""
+    line = _TEMPLATE_LINK.sub("", line)
+    line = _TEMPLATE_PARAM.sub("", line)
+    line = _CITATION.sub("", line)
+    return re.sub(r"\s{2,}", " ", line).strip()
+
+
 def to_markdown(title, text, max_chars=MAX_DOC_CHARS):
     """Convert a plain-text extract into markdown sections that name their
     subject. Level-2 headings become '## Title: Heading'; level-3 become
@@ -151,7 +170,7 @@ def to_markdown(title, text, max_chars=MAX_DOC_CHARS):
             continue
         if skipping:
             continue
-        line = raw.strip()
+        line = clean_line(raw)
         if "{\\displaystyle" in line:  # leftover maths markup, not readable text
             continue
         current[1].append(line)

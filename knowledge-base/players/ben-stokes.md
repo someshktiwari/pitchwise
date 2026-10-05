@@ -10,7 +10,7 @@
 
 ## Career Overview
 
-Ben Stokes is one of the most celebrated all-rounders in modern cricket, known equally for explosive batting and hostile fast-medium bowling. Though born in New Zealand, he has represented England since making his debut in 2011. He has served as England's Test captain since April 2022, building an aggressive style of play often referred to as "Bazball."
+Ben Stokes is one of the most celebrated all-rounders in modern cricket, known equally for explosive batting and hostile fast-medium bowling. Though born in New Zealand, he has represented England since making his debut in 2011. He served as England's Test captain from April 2022 until his retirement from international cricket in 2026, building an aggressive style of play often referred to as "Bazball."
 
 ## Ben Stokes's Career Statistics (as of mid-2026)
 
@@ -25,6 +25,6 @@ Ben Stokes is one of the most celebrated all-rounders in modern cricket, known e
 - Scored an unbeaten 135 at Headingley in the 2019 Ashes, one of the greatest innings in Test history, won off the last wicket
 - Captains England's Test team, having led the "Bazball" era of aggressive Test cricket
 
-## Ben Stokes's Honours and Retirement from ODI and T20I Cricket
+## Ben Stokes's Honours and Retirement from International Cricket
 
-Ben Stokes was awarded an OBE for services to cricket. Ben Stokes retired from ODI cricket after the 2023 World Cup and from T20Is in 2025, continuing to play and captain in Test cricket.
+Ben Stokes was awarded an OBE for services to cricket. Ben Stokes retired from ODI cricket after the 2023 World Cup and from T20Is in 2025, and then from international cricket altogether in 2026: his last Test was the third Test against New Zealand (25–29 June 2026), in a home series England lost 2–1. Joe Root was reappointed England's Test captain to succeed him.

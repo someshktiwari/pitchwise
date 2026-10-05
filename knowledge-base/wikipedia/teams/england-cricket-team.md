@@ -1,0 +1,93 @@
+---
+title: England cricket team
+source: https://en.wikipedia.org/w/index.php?title=England_cricket_team&oldid=1378388584
+revision_timestamp: 2026-10-04T07:00:11Z
+retrieved: 2026-10-05
+licence: CC BY-SA 4.0, Wikipedia contributors. Adapted: reformatted into markdown and trimmed.
+---
+# England cricket team
+
+## England cricket team: Overview
+
+The England men's cricket team represents England and Wales in international cricket. Since 1997, it has been governed by the England and Wales Cricket Board (ECB), having been previously governed by Marylebone Cricket Club (the MCC) since 1903. England and Wales, as founding nations, are a Full Member of the International Cricket Council (ICC) with Test, One Day International (ODI) and Twenty20 International (T20I) status. Until the 1990s, Scottish and Irish players also played for England as those countries were not yet ICC members in their own right.
+England and Australia were the first teams to play a Test match (15–19 March 1877), and along with South Africa, these nations formed the Imperial Cricket Conference (the predecessor to today's International Cricket Council) on 15 June 1909. England and Australia also played the first ODI on 5 January 1971. England's first T20I was played on 13 June 2005, once more against Australia.
+As of 27 September 2026, England have played 1,100 Test matches, winning 408 and losing 336 (with 356 draws). In the Test series against Australia, England play for The Ashes, one of the most famous trophies in all of sport, and they have won the urn on 32 occasions. England have also played 829 ODIs, winning 413. They have appeared in the final of the Cricket World Cup four times (1979, 1987, 1992), winning their first in 2019; they have also finished as runners-up in two ICC Champions Trophies (2004 and 2013). England have played 233 T20Is, winning 128. They won the ICC T20 World Cup in 2010 and 2022, and were runners-up in 2016.
+As of September 2026, England are ranked fifth in Tests, sixth in ODIs and second in T20Is by the ICC.
+
+## England cricket team: History
+
+The first recorded incidence of a team with a claim to represent England comes from 9 July 1739 when an "All-England" team, which consisted of 11 gentlemen from any part of England exclusive of Kent, played against "the Unconquerable County" of Kent and lost by a margin of "very few notches". Such matches were repeated on numerous occasions for the best part of a century.
+In 1846 William Clarke formed the All-England Eleven. This team eventually competed against a United All-England Eleven with annual matches occurring between 1847 and 1856. These matches were arguably the most important contest of the English season if judged by the quality of the players.
+
+## England cricket team: History - Early tours
+
+The first overseas tour occurred in September 1859 with England touring North America. This team had six players from the All-England Eleven, six from the United All-England Eleven and was captained by George Parr.
+With the outbreak of the American Civil War, attention turned elsewhere. English tourists visited Australia in 1861–62 with this first tour organised as a commercial venture by Messrs Spiers and Pond, restaurateurs of Melbourne. Most matches played during tours prior to 1877 were "against odds", with the opposing team fielding more than 11 players to make for a more even contest. This first Australian tour was mostly against odds of at least 18/11.
+
+The tour was so successful that Parr led a second tour in 1863–64. James Lillywhite led a subsequent England team which sailed on the P&O steamship Poonah on 21 September 1876. They played a combined Australian XI, for once on even terms of 11-a-side. The match, starting on 15 March 1877 at the Melbourne Cricket Ground came to be regarded as the inaugural Test match. The combined Australian XI won this Test match by 45 runs with Charles Bannerman of Australia scoring the first Test century. At the time, the match was promoted as James Lillywhite's XI v Combined Victoria and New South Wales. The teams played a return match on the same ground at Easter, 1877, when Lillywhite's team avenged their loss with a victory by four wickets. The first Test match on English soil occurred in 1880 with England victorious; this was the first time England fielded a fully representative team with W. G. Grace included in the team.
+
+## England cricket team: History - 1880s
+
+England lost their first home series 1–0 in 1882, with The Sporting Times printing an obituary on English cricket:
+
+As a result of this loss, the tour of 1882–83 was dubbed by England captain Ivo Bligh as "the quest to regain the ashes". England, with a mixture of amateurs and professionals, won the series 2–1. Bligh was presented with an urn that contained some ashes, which have variously been said to be of a bail, ball or even a woman's veil, and so The Ashes was born. A fourth match was then played which Australia won by four wickets. However, the match was not considered part of the Ashes series. England dominated many of these early contests, with England winning the Ashes series 10 times between 1884 and 1898. During this period England also played their first Test match against South Africa in 1889 at Port Elizabeth.
+
+## England cricket team: History - 1890s
+
+England won the 1890 Ashes series 2–0, with the third match of the series being the first Test match to be abandoned. England lost 2–1 in the 1891–92 series, although England regained the urn the following year. England again won the 1894–95 series, winning 3–2 under the leadership of Andrew Stoddart. In 1895–96, England played South Africa, winning all Tests in the series. The 1899 Ashes series was the first tour where the MCC and the counties appointed a selection committee. There were three active players: Grace, Lord Hawke and Warwickshire captain Herbert Bainbridge. Prior to this, England teams for home Tests had been chosen by the club on whose ground the match was to be played. England lost the 1899 Ashes series 1–0, with Grace making his final Test appearance in the first match of the series.
+
+## England cricket team: History - 1900s
+
+The start of the 20th century saw mixed results for England as they lost four of the eight Ashes series between 1900 and 1914. During this period, England lost their first series against South Africa in the 1905–06 season 4–1 as their batting faltered.
+England lost their first series of the new century to Australia in 1901–02 Ashes. Australia also won the 1902 series, which was memorable for exciting cricket, including Gilbert Jessop scoring a Test century in just 70 minutes. England regained the Ashes in 1904 under the captaincy of Pelham Warner. R. E. Foster scored 287 on his debut and Wilfred Rhodes took 15 wickets in a match. In 1905–06, England lost 4–1 against South Africa. England avenged the defeat in 1907, when they won the series 1–0 under the captaincy of Foster. However, they lost the 1909 Ashes series against Australia, using 25 players in the process. England also lost to South Africa, with Jack Hobbs scoring his first of 15 centuries on the tour.
+
+## England cricket team: History - 1910s
+
+England toured Australia in 1911–12 and beat their opponents 4–1. The team included the likes of Rhodes, Hobbs, Frank Woolley and Sydney Barnes. England lost the first match of the series but bounced back and won the next four Tests. This proved to be the last Ashes series before the war.
+The 1912 season saw England take part in a unique experiment. A nine-Test triangular tournament involving England, South Africa and Australia was set up. The series was hampered by a very wet summer and player disputes however and the tournament was considered a failure with the Daily Telegraph stating:
+
+Nine Tests provide a surfeit of cricket, and contests between Australia and South Africa are not a great attraction to the British public.
+With Australia sending a weakened team and the South African bowlers being ineffective England dominated the tournament winning four of their six matches. The match between Australia and South Africa at Lord's was visited by King George V, the first time a reigning monarch had watched Test cricket. England went on one more tour before the outbreak of the First World War, beating South Africa 4–0, with Barnes taking 49 wickets in the series.
+
+## England cricket team: History - 1920s
+
+England's first match after the war was in the 1920–21 season against Australia. Still feeling the effects of the war England went down to a series of crushing defeats and suffered their first whitewash losing the series 5–0. Six Australians scored hundreds while Mailey spun out 36 English batsmen. Things were no better in the next few Ashes series losing the 1921 Ashes series 3–0 and the 1924–25 Ashes 4–1. England's fortunes were to change in 1926 as they regained the Ashes and were a formidable team during this period dispatching Australia 4–1 in the 1928–29 Ashes tour.
+In the same year the West Indies became the fourth nation to be granted Test status and played their first game against England. England won each of these three Tests by an innings, and a view was expressed in the press that their elevation had proved a mistake although Learie Constantine did the double on the tour. In the 1929–30 season England went on two concurrent tours with one team going to New Zealand (who were granted Test status earlier that year) and the other to the West Indies. Despite sending two separate teams England won against New Zealand 1–0 and drawn with the West Indies 1–1.
+
+## England cricket team: History - 1930s
+
+The 1930 Ashes series saw a young Don Bradman dominate the tour, scoring 974 runs in his seven Test innings. He scored 254 at Lord's, 334 at Headingley and 232 at The Oval. Australia regained the Ashes winning the series 2–1. As a result of Bradman's prolific run-scoring the England captain Douglas Jardine chose to develop the already existing leg theory into fast leg theory, or bodyline, as a tactic to stop Bradman. Fast leg theory involved bowling fast balls directly at the batsman's body. The batsman would need to defend himself, and if he touched the ball with the bat, he risked being caught by one of a large number of fielders placed on the leg side.
+Using Jardine's fast leg theory, England won the next Ashes series 4–1, but complaints about the Bodyline tactic caused crowd disruption on the tour, and threats of diplomatic action from the Australian Cricket Board, which during the tour sent the following cable to the MCC in London:
+
+Bodyline bowling assumed such proportions as to menace best interests of game, making protection of body by batsmen the main consideration. Causing intensely bitter feeling between players as well as injury. In our opinion is unsportsmanlike. Unless stopped at once likely to upset friendly relations existing between Australia and England.
+Later, Jardine was removed from the captaincy and the Laws of Cricket changed so that no more than one fast ball aimed at the body was permitted per over, and having more than two fielders behind square leg was banned.
+England's following tour of India in the 1933–34 season was the first Test match to be staged in the subcontinent. The series was also notable for Stan Nichols and Nobby Clark bowling so many bouncers that the Indian batsman wore solar toupées instead of caps to protect themselves. Australia won the 1934 Ashes series 2–1 and kept the urn for the following 19 years.
+England drew the 1938 Ashes, meaning Australia retained the urn. England went into the final match of the series at The Oval 1–0 down, but won the final game by an innings and 579 runs. Len Hutton made the highest ever Test score by an Englishman, making 364 in England first innings to help them reach 903, their highest ever score against Australia.
+The 1938–39 tour of South Africa saw another experiment with the deciding Test being a timeless Test that was played to a finish. England lead 1–0 going into the final timeless match at Durban. Despite the final Test being 'timeless', the game ended in a draw after 10 days as England had to catch the train to catch the boat home. A record 1,981 runs were scored, and the concept of timeless Tests was abandoned. England hosted the West Indies in 1939 before the Second World War, although a team for an MCC tour of India was selected more in hope than expectation of the matches being played.
+
+## England cricket team: History - 1940s
+
+Test cricket resumed after the war in 1946, and England won their first match back against India. However, they struggled in the 1946–47 Ashes series, losing 3–0 in Australia under Wally Hammond's captaincy. England beat South Africa 3–0 in 1947 with Denis Compton scoring 1,187 runs in the series.
+The 1947–48 series against the West Indies was another disappointment for England, with the team losing 2–0 following injuries to several key players. England suffered further humiliation against Bradman's invincible team in the 1948 Ashes series. Hutton was controversially dropped for the third Test, and England were bowled out for just 52 at The Oval. The series proved to be Bradman's final Ashes series.
+In 1948–49, England beat South Africa 2–0 under the captaincy of George Mann. The series included a record breaking stand of 359 between Hutton and Cyril Washbrook. The decade ended with England drawing the Test series against New Zealand, with every match ending in a draw.
+
+## England cricket team: History - 1950s
+
+On 29 June 1950 England lost to the West Indies for the first time, with this being followed by a 3–1 series loss when they lost at The Oval on 16 August 1950.
+
+Their fortunes against Australia changed on the 1953 Ashes tour as they won the series 1–0. England did not lose a series between their 1950–51 and 1958–59 tours of Australia and secured famous victory in 1954–55 under the captaincy of Len Hutton, thanks to Frank Tyson whose 6/85 at Sydney and 7/27 at Melbourne are remembered as the fastest bowling ever seen in Australia. The 1956 series was remembered for the bowling of Jim Laker who took 46 wickets at an average of 9.62, including figures of 19/90 at Old Trafford. After drawing to South Africa, England defeated the West Indies and New Zealand comfortably.
+The England team then left for Australia in the 1958–59 season with a team that had been hailed as the strongest ever to leave on an Ashes tour but lost the series 4–0 as Richie Benaud's revitalised Australians were too strong, with England struggling with the bat throughout the series.
+On 24 August 1959, England inflicted its only 5–0 whitewash over India. All out for 194 at The Oval, India lost the last test by an innings. England's batsman Ken Barrington and Colin Cowdrey both had an excellent series with the bat, with Barrington scoring 357 runs across the series and Cowdrey scoring 344.
+
+## England cricket team: History - 1960s
+
+The early and middle 1960s were poor periods for English cricket. Despite England's strength on paper, Australia held the Ashes and the West Indies dominated England in the early part of the decade. May stood down as captain in 1961 following the 1961 Ashes defeat.
+Ted Dexter succeeded him as captain but England continued to suffer indifferent results. In 1961–62, they beat Pakistan, but also lost to India. The following year saw England and Australia tie the 1962–63 Ashes series 1–1, meaning Australia retained the urn. Despite beating New Zealand 3–0, England went on to lose to the West Indies, and again failed in the 1964 Ashes, losing the home series 1–0, which marked the end of Dexter's captaincy.
+However, from 1968 to 1971 they played 27 consecutive Test matches without defeat, winning 9 and drawing 18 (including the abandoned Test at Melbourne in 1970–71). The sequence began when they drew with Australia at Lord's in the Second Test of the 1968 Ashes series and ended in 1971 when India won the Third Test at The Oval by four wickets. They played 13 Tests with only one defeat immediately beforehand and so played a total of 40 consecutive Tests with only one defeat, dating from their innings victory over the West Indies at The Oval in 1966. During this period they beat New Zealand, India, the West Indies, and Pakistan, and under Ray Illingworth's leadership, regained The Ashes from Australia in 1970–71.
+
+## England cricket team: History - 1970s
+
+The 1970s, for the England team, can be largely split into three parts. Early in the decade, Illingworth's team dominated world cricket, winning the Ashes away in 1971 and then retaining them at home in 1972. The same team beat Pakistan at home in 1971 and played by far the better cricket against India that season. However, England were largely helped by the rain to sneak the Pakistan series 1–0 but the same rain saved India twice and one England collapse saw them lose to India. This was, however, one of (if not the) strongest England team ever with the likes of Illingworth, Geoffrey Boycott, John Edrich, Basil D'Oliveira, Dennis Amiss, Alan Knott, John Snow and Derek Underwood at its core.
+The mid-1970s were more turbulent. Illingworth and several others had refused to tour India in 1972–73 which led to a clamour for Illingworth's job by the end of that summer – England had just been beaten 2–0 by a flamboyant West Indies team – with several England players well over 35. Mike Denness was the surprising choice but only lasted 18 months; his results against poor opposition were good, but England were badly exposed as ageing and lacking in good fast bowling against the 1974–75 Australians, losing that series 4–1 to lose the Ashes.
+Denness was replaced in 1975 by Tony Greig. While he managed to avoid losing to Australia, his team were largely thrashed the following year by the young and very much upcoming West Indies for whom Greig's infamous "grovel" remark acted as motivation. Greig's finest hour as England's captain was the 1976–77 win over India in India. When Greig was discovered as being instrumental in World Series Cricket, he was sacked, and replaced by Mike Brearley.
+Brearley's team showed again the hyperbole that is often spoken when one team dominates in cricket. While his team of 1977–80 contained some young players who went on to become England greats, most notably future captains Ian Botham, David Gower and Graham Gooch, their opponents were often very much weakened by the absence of their World Series players, especially in 1978, when England drew New Zealand 1–1 and Pakistan 2–0 before thrashing what was effectively Australia's 2nd XI 5–1 in 1978–79.

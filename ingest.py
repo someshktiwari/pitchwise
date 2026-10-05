@@ -19,6 +19,7 @@ This module implements the decisions recorded in DECISIONS.md:
 import hashlib
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -38,7 +39,13 @@ INDEX_DIR = os.getenv("PITCHWISE_INDEX_DIR", ".index")  # D-015: saved index, gi
 # the curated chunks are unchanged.
 MAX_CHUNK_CHARS = 1000
 CHUNK_OVERLAP_CHARS = 150
-CHUNKING_VERSION = "2"  # bump when chunking changes, so a saved index is rebuilt
+CHUNKING_VERSION = "3"  # bump when chunking changes, so a saved index is rebuilt
+# A Wikipedia chunk with less real text than this (after its heading, bold
+# sub-heading labels and "Last updated" notes) is dropped: these are sections
+# whose content was a table, which the plain-text extract leaves out (D-014).
+MIN_CHUNK_TEXT_CHARS = 40
+_LABEL_LINE = re.compile(r"^\*\*.*\*\*$|^last updated\b.*$|^all records correct as of\b.*$|^\(as (on|of) .*\)$",
+                         re.IGNORECASE)
 
 # D-001: split on header boundaries, not raw character count
 HEADERS_TO_SPLIT_ON = [
@@ -127,10 +134,21 @@ def chunk_documents(documents):
             pieces = sizer.split_text(chunk.page_content) if len(chunk.page_content) > MAX_CHUNK_CHARS \
                 else [chunk.page_content]
             for piece in pieces:
+                if not has_real_text(piece):
+                    continue
                 text = f"{heading}\n{piece}" if heading else piece
                 chunks.append(Document(page_content=text, metadata=dict(chunk.metadata)))
 
     return chunks
+
+
+def has_real_text(text):
+    """False for a chunk that is only labels and dates, e.g. a heading over
+    a table the extract dropped: "**Finals.**" or "Last updated 25 October
+    2025." Such chunks add retrieval noise and no answerable facts."""
+    lines = [l.strip() for l in text.splitlines() if l.strip()]
+    real = " ".join(l for l in lines if not _LABEL_LINE.match(l))
+    return len(real) >= MIN_CHUNK_TEXT_CHARS
 
 
 def get_embeddings():
