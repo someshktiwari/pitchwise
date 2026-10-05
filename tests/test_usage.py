@@ -53,11 +53,20 @@ QWEN = base.MODEL_OPTIONS[DEFAULT][1]
 
 def test_cost_uses_list_prices_and_flags_unknown_models():
     # qwen3.8-27b: $0.80 / 1M input, $4.00 / 1M output
-    assert usage.cost_usd(QWEN, 1_000_000, 0) == pytest.approx(0.80)
-    assert usage.cost_usd(QWEN, 0, 1_000_000) == pytest.approx(4.00)
-    assert usage.cost_usd("unknown-model", 10, 10) is None
-    # every model the app can call has a price
-    assert all(model in usage.PRICES for _, model in base.MODEL_OPTIONS.values())
+    assert usage.cost_usd("groq", QWEN, 1_000_000, 0) == pytest.approx(0.80)
+    assert usage.cost_usd("groq", QWEN, 0, 1_000_000) == pytest.approx(4.00)
+    assert usage.cost_usd("groq", "unknown-model", 10, 10) is None
+    # the same model costs a different amount from another provider
+    assert usage.cost_usd("openrouter", QWEN, 1_000_000, 0) != usage.cost_usd("groq", QWEN, 1_000_000, 0)
+    # every model the app or the evaluation can call has a price
+    assert all(pm in usage.PRICES for pm in base.ALL_MODEL_OPTIONS.values())
+
+
+def test_paid_eval_routes_are_never_in_the_app_or_its_fallback():
+    for label in base.EVAL_ONLY_MODEL_OPTIONS:
+        assert label not in base.MODEL_OPTIONS          # not in the UI or the public API
+        assert label not in base.FALLBACK_ORDER         # never reached by automatic fallback
+        assert base.build_try_order(label, allow_fallback=False) == [label]  # but usable when pinned
 
 
 def test_linear_engine_reports_tokens_and_cost(monkeypatch):

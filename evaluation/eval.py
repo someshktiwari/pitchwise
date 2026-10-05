@@ -27,7 +27,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from evaluation.test import TestQuestion, load_tests
-from answer import answer_question, retrieve_context, call_model, MODEL_OPTIONS
+from answer import answer_question, retrieve_context, call_model, MODEL_OPTIONS, ALL_MODEL_OPTIONS
 import observability as obs
 import usage
 
@@ -134,7 +134,7 @@ def _parse_judge_json(raw_text: str) -> dict:
 
 
 def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None, engine="linear",
-                    allow_fallback=True, trace_out=None) -> tuple[AnswerEval, str, list]:
+                    allow_fallback=True, trace_out=None, model_label=None) -> tuple[AnswerEval, str, list]:
     """Evaluate answer quality using LLM-as-a-judge.
 
     retriever_k overrides the retriever's default chunk count (D-007),
@@ -143,7 +143,8 @@ def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None, engine="l
     Returns (AnswerEval, generated_answer, retrieved_docs).
     """
     generated_answer, retrieved_docs, trace = answer_question(
-        vectorstore, test.question, k=retriever_k, engine=engine, allow_fallback=allow_fallback)
+        vectorstore, test.question, k=retriever_k, engine=engine, allow_fallback=allow_fallback,
+        model_label=model_label)
     if trace_out is not None:
         trace_out.clear()
         trace_out.update(trace)
@@ -267,7 +268,7 @@ def _load_completed_questions():
 
 
 def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True,
-                        tests_file=None):
+                        tests_file=None, model_label=None):
     """Run retrieval + answer evaluation across the full test set.
 
     Saves each result to evaluation/results.jsonl as soon as it's computed
@@ -282,7 +283,10 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
     global RESULTS_FILE
     if results_file:
         RESULTS_FILE = str(results_file)  # one file per run, never mix two runs (D-010)
-    print(f"Engine: {engine} | fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
+    if model_label is not None and model_label not in ALL_MODEL_OPTIONS:
+        raise SystemExit(f"Unknown model {model_label!r}. Choose one of: {list(ALL_MODEL_OPTIONS)}")
+    print(f"Engine: {engine} | model: {model_label or 'default'} | "
+          f"fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
 
     tests = load_tests(tests_file)
     print(f"Test set: {tests_file or 'evaluation/tests.jsonl'} ({len(tests)} questions)")
@@ -305,7 +309,8 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
             with obs.trace_attributes(session_id=Path(RESULTS_FILE).stem,
                                       metadata={"category": test.category}):
                 answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(
-                    vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace))
+                    vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace,
+                    model_label=model_label))
         except Exception as e:
             print(f"  FAILED after retries: {e}\n")
             continue
@@ -394,9 +399,11 @@ if __name__ == "__main__":
                         help="disable provider fallback so the whole run uses one model (D-010)")
     parser.add_argument("--no-resume", action="store_true", help="ignore existing results in the file")
     parser.add_argument("--tests", help="test set file (default: evaluation/tests.jsonl, the frozen v2 set)")
+    parser.add_argument("--model", help="model label to answer with (default: the app's default model); "
+                                        "with --pin-model, the only model used")
     args = parser.parse_args()
 
     store = ingest()
     run_full_evaluation(store, resume=not args.no_resume, engine=args.engine,
                         results_file=args.results, allow_fallback=not args.pin_model,
-                        tests_file=args.tests)
+                        tests_file=args.tests, model_label=args.model)

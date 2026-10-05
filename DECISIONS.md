@@ -12,7 +12,7 @@ alternatives considered, the reasoning, and the trade-offs explicitly accepted.
 D-001 through D-008 — ingestion and generation pipeline decisions.
 D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 D-012 through D-013 — v3: token and cost accounting, request tracing.
-D-014 through D-015 — v3: knowledge base expansion, saved index.
+D-014 through D-016 — v3: knowledge base expansion, saved index, evaluation model choice.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -706,6 +706,43 @@ avoids that, and an interrupted build never replaces a good index.
 same moment could collide; in practice the app and an evaluation run share
 one index that is built once. `persist_directory=None` still builds in
 memory, which the tests use.
+
+---
+
+## D-016 · v3 Evaluation Runs Stay on Groq's Free Tier; Paid Routes Are Opt-In
+
+**Date:** October 2026
+
+**Decision:** the v3 runs (linear and two agentic, on the v3 test set) use
+the same pinned model and provider as v2, qwen3.8-27b on Groq's free tier,
+run day by day as the daily token limit allows. A paid route to the same
+model (OpenRouter) was added as an option but is not used for these runs.
+
+**Why:** the three runs need roughly 1.5 million tokens against Groq's free
+limit of 200,000 a day for this model, so they take about a week; Groq's
+paid tier was not accepting upgrades at the time. The alternative was the
+same open-weight model through OpenRouter for under a dollar, finishing in
+a day. Staying on Groq keeps v3 identical to v2 in model *and* provider, so
+the only differences between v2 and v3 are the knowledge base and the test
+set. A run that spans several days is still one model throughout, because
+`--pin-model` makes a rate-limited question fail and be retried the next
+day instead of falling back to another model.
+
+**What was built for the option, and kept:**
+- `evaluation.eval --model` chooses the answer model; with `--pin-model` it
+  is the only model used, for routing calls too (C-005).
+- Paid routes live in `EVAL_ONLY_MODEL_OPTIONS`, not in `MODEL_OPTIONS`, so
+  the chat UI, the public API and automatic fallback can never spend money
+  on them; a test enforces this.
+- Prices are keyed by provider and model, because the same model costs
+  different amounts from different providers. The first version keyed them
+  by model alone, so adding OpenRouter's price for qwen3.8-27b silently
+  replaced Groq's; a test caught it before any run.
+
+**Trade-off accepted:** results arrive in about a week rather than a day,
+and the shared daily limit means the app should be tried on a different
+model (each Groq model has its own free allowance) while the runs are in
+progress.
 
 ---
 

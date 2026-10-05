@@ -31,7 +31,7 @@ verified with real data. Details in [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 ## Architecture
 
 ```
-knowledge-base/          17 curated documents + 132 Wikipedia articles (about 3,100 chunks)
+knowledge-base/          17 curated documents + about 130 Wikipedia articles (about 3,100 chunks)
        │
        ▼
    ingest.py              chunk (header-aware) → embed (local, free) → vector store
@@ -177,7 +177,7 @@ uv run python -m evaluation.mechanism         # keyword coverage of the agentic 
 uv run python scripts/build_kb.py             # fetch the Wikipedia part of the knowledge base (needs internet)
 uv run python -m evaluation.build_tests_v3    # rebuild the v3 test set and check every keyword
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
-    --results evaluation/results_v3_agentic_r1.jsonl   # a v3 run
+    --results evaluation/results_v3_agentic_r1.jsonl   # a v3 run on the default model (D-016)
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 

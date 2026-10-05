@@ -71,6 +71,16 @@ DEFAULT_MODEL_LABEL = "Groq: qwen3.8-27b (fastest, default)"
 # Fallback tries every option in MODEL_OPTIONS order if the selected one fails
 FALLBACK_ORDER = list(MODEL_OPTIONS.keys())
 
+# Paid routes the evaluation can opt into with `evaluation.eval --model`
+# (none of the published runs uses one). They are deliberately not in
+# MODEL_OPTIONS, so the UI, the public API and automatic fallback can never
+# spend money on them (D-016).
+EVAL_ONLY_MODEL_OPTIONS = {
+    # The same open-weight model as the Groq default, on OpenRouter's paid route
+    "OpenRouter: qwen3.8-27b (paid)": ("openrouter", "qwen/qwen3.8-27b"),
+}
+ALL_MODEL_OPTIONS = {**MODEL_OPTIONS, **EVAL_ONLY_MODEL_OPTIONS}
+
 
 @obs.observe(name="retrieve", as_type="retriever")
 def retrieve_context(vectorstore, question, k=None):
@@ -192,7 +202,7 @@ def call_model(provider, model, system_prompt, question, history=None, temperatu
                               status_message=str(e)[:500])
         raise
     usage.record(provider, model, input_tokens, output_tokens, timer.ms())
-    cost = usage.cost_usd(model, input_tokens, output_tokens)
+    cost = usage.cost_usd(provider, model, input_tokens, output_tokens)
     obs.update_generation(
         name=usage.current_step(),
         model=model,
@@ -212,7 +222,7 @@ def build_try_order(model_label=None, allow_fallback=True):
     only the first model is tried, so an evaluation run measures exactly one
     model instead of silently mixing providers (D-010)."""
     try_order = []
-    if model_label and model_label in MODEL_OPTIONS:
+    if model_label and model_label in ALL_MODEL_OPTIONS:
         try_order.append(model_label)
     for label in FALLBACK_ORDER:
         if label not in try_order:
@@ -227,7 +237,7 @@ def generate_with_fallback(system_prompt, question, history=None, model_label=No
     option fails."""
     last_error = None
     for label in build_try_order(model_label, allow_fallback):
-        provider, model = MODEL_OPTIONS[label]
+        provider, model = ALL_MODEL_OPTIONS[label]
         try:
             text = call_model(provider, model, system_prompt, question,
                               history=history, temperature=temperature)

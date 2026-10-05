@@ -26,30 +26,36 @@ from contextlib import contextmanager
 
 PRICES_CHECKED = "2026-10-05"
 
-# model id -> (USD per 1M input tokens, USD per 1M output tokens)
+# (provider, model id) -> (USD per 1M input tokens, USD per 1M output tokens).
+# Keyed by provider as well as model: the same open-weight model costs
+# different amounts from different providers (qwen3.8-27b on Groq and on
+# OpenRouter below).
 PRICES = {
     # Groq, console.groq.com/docs/models
-    "qwen/qwen3.8-27b": (0.80, 4.00),
-    "openai/gpt-oss-20b": (0.075, 0.30),
-    "openai/gpt-oss-120b": (0.15, 0.60),
+    ("groq", "qwen/qwen3.8-27b"): (0.80, 4.00),
+    ("groq", "openai/gpt-oss-20b"): (0.075, 0.30),
+    ("groq", "openai/gpt-oss-120b"): (0.15, 0.60),
     # Google, ai.google.dev/gemini-api/docs/pricing (paid tier, text input)
-    "gemini-3.5-flash-lite": (0.30, 2.50),
-    "gemini-3.6-flash": (0.75, 3.75),  # rises to 1.50 / 7.50 on 2027-01-01
-    "gemini-3.1-flash-lite": (0.25, 1.50),
+    ("gemini", "gemini-3.5-flash-lite"): (0.30, 2.50),
+    ("gemini", "gemini-3.6-flash"): (0.75, 3.75),  # rises to 1.50 / 7.50 on 2027-01-01
+    ("gemini", "gemini-3.1-flash-lite"): (0.25, 1.50),
+    # OpenRouter, openrouter.ai/qwen/qwen3.8-27b: the lowest price across the
+    # providers it routes to, so treat it as a floor
+    ("openrouter", "qwen/qwen3.8-27b"): (0.024, 4.35),
     # OpenRouter ":free" variants cost nothing
-    "minimax/minimax-m3:free": (0.0, 0.0),
+    ("openrouter", "minimax/minimax-m3:free"): (0.0, 0.0),
 }
 
 _CALLS = contextvars.ContextVar("pitchwise_llm_calls", default=None)
 _STEP = contextvars.ContextVar("pitchwise_llm_step", default="generate")
 
 
-def cost_usd(model, input_tokens, output_tokens):
-    """List-price cost of one call. None when the model has no known price,
-    so an unpriced model shows up as unknown instead of silently as $0."""
-    if model not in PRICES:
+def cost_usd(provider, model, input_tokens, output_tokens):
+    """List-price cost of one call. None when the model has no known price
+    from that provider, so it shows up as unknown instead of silently as $0."""
+    if (provider, model) not in PRICES:
         return None
-    price_in, price_out = PRICES[model]
+    price_in, price_out = PRICES[(provider, model)]
     return ((input_tokens or 0) * price_in + (output_tokens or 0) * price_out) / 1_000_000
 
 
@@ -96,7 +102,7 @@ def record(provider, model, input_tokens, output_tokens, latency_ms, ok=True, er
         "model": model,
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
-        "cost_usd": cost_usd(model, input_tokens, output_tokens) if ok else 0.0,
+        "cost_usd": cost_usd(provider, model, input_tokens, output_tokens) if ok else 0.0,
         "latency_ms": latency_ms,
         "ok": ok,
         "error": (str(error)[:200] if error else None),
