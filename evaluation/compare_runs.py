@@ -21,6 +21,7 @@ from pathlib import Path
 
 import gradio as gr
 import pandas as pd
+import plotly.express as px
 
 DEFAULT_RUNS = {
     "Linear (v1)": "evaluation/results_linear_oct.jsonl",
@@ -29,6 +30,7 @@ DEFAULT_RUNS = {
 }
 CATEGORY_ORDER = ["direct_fact", "spanning", "temporal", "out_of_scope"]
 FAIL_THRESHOLD = 3.0  # an answer accuracy below this counts as a failed question
+PORT = 7870  # own port, so it never collides with the chat app on 7860
 
 
 def load_run(path):
@@ -88,6 +90,16 @@ def route_mix(runs):
     return pd.DataFrame(rows)
 
 
+def accuracy_chart(chart_data):
+    """Grouped bars: one bar per run, side by side within each category."""
+    fig = px.bar(chart_data, x="Category", y="Accuracy", color="Run", barmode="group",
+                 text="Accuracy", category_orders={"Category": CATEGORY_ORDER},
+                 title="Answer accuracy by category (1-5)")
+    fig.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+    fig.update_layout(yaxis_range=[1, 5.4], height=420, legend_title_text="")
+    return fig
+
+
 def build(run_paths):
     runs = {label: load_run(p) for label, p in run_paths.items()}
     summary = summarise(runs)
@@ -101,8 +113,7 @@ def build(run_paths):
             "and the same LLM judge. Scores are 1-5. Files: "
             + ", ".join(f"`{label}` = `{p}`" for label, p in run_paths.items())
         )
-        gr.BarPlot(chart_data, x="Category", y="Accuracy", color="Run",
-                   x_label_angle=0, y_lim=[1, 5], title="Answer accuracy by category", height=380)
+        gr.Plot(accuracy_chart(chart_data))
         gr.Markdown("## Summary")
         gr.Dataframe(summary, interactive=False, wrap=True)
         if not routes.empty:
@@ -115,4 +126,4 @@ if __name__ == "__main__":
     paths = parse_args(sys.argv[1:])
     if not paths:
         sys.exit("No results files found. Pass LABEL=path arguments.")
-    build(paths).launch(inbrowser=True, theme=gr.themes.Soft(primary_hue=gr.themes.colors.green))
+    build(paths).launch(inbrowser=True, server_port=PORT, theme=gr.themes.Soft(primary_hue=gr.themes.colors.green))
