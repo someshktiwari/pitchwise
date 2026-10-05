@@ -28,6 +28,7 @@ from answer import retrieve_context
 from evaluation.test import load_tests
 from graph import run_agentic
 from ingest import ingest
+import observability as obs
 
 DEFAULT_QUESTIONS = [66, 67, 76, 79]
 MODEL = "Groq: gpt-oss-20b"
@@ -65,6 +66,7 @@ def main():
         print(f"  steps: {trace['steps']}")
         print(f"  answer: {answer.strip()[:200]}")
     print("=" * 80)
+    obs.flush()
 
 
 if __name__ == "__main__":

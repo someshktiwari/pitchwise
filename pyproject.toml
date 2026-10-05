@@ -17,6 +17,7 @@ dependencies = [
     "langchain-huggingface>=1.2.2",
     "langchain-openai>=1.6.0",
     "langchain-text-splitters>=1.1.2",
+    "langfuse>=4.17",
     "langgraph>=1.2",
     "nbformat>=5.11.1",
     "numpy>=2.5.2",

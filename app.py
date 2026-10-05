@@ -68,6 +68,15 @@ ENGINE_CHOICES = {
 DEFAULT_ENGINE_LABEL = "Linear RAG (v1)"
 
 
+def format_usage(u):
+    """'2,310 in / 85 out, $0.002188 at list price' (D-012)."""
+    if not u:
+        return "n/a"
+    cost = "price unknown" if u.get("cost_usd") is None else f"${u['cost_usd']:.6f} at list price"
+    failed = f", {u['failed_attempts']} failed attempt(s) before fallback" if u.get("failed_attempts") else ""
+    return f"{u['input_tokens']:,} in / {u['output_tokens']:,} out, {cost}{failed}"
+
+
 def format_trace(trace):
     """Render what the engine did for this answer: route, sub-queries,
     rewrites, LLM calls, latency, and which model answered (D-009)."""
@@ -83,6 +92,7 @@ def format_trace(trace):
         f"- **Latency:** {trace.get('latency_ms')} ms",
         f"- **Answered by:** {trace.get('answered_by')}",
         f"- **Routing model:** {', '.join(trace.get('routing_models') or []) or 'n/a'}",
+        f"- **Tokens:** {format_usage(trace.get('usage'))}",
         f"- **Steps:** {' → '.join(trace.get('steps') or [])}",
     ]
     return "\n".join(lines)

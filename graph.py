@@ -45,6 +45,8 @@ from typing import Annotated, Optional, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 import answer as base  # accessed as base.x so tests can patch the seams
+import observability as obs
+import usage
 
 MAX_SUB_QUERIES = 3
 MAX_REWRITES = 2
@@ -143,14 +145,15 @@ def build_graph(vectorstore):
     """Compile the agentic graph. The vector store is closed over by the
     retrieve node rather than stored in state, so state stays plain data."""
 
-    def route_llm(state, system, user):
-        return call_llm(system, user, model_label=state["model_label"],
-                        allow_fallback=state["allow_fallback"])
+    def route_llm(state, step_name, system, user):
+        with usage.step(step_name):
+            return call_llm(system, user, model_label=state["model_label"],
+                            allow_fallback=state["allow_fallback"])
 
     def plan(state):
         user = json.dumps({"question": state["question"],
                            "history": state["history"][-HISTORY_TURNS:]}, default=str)
-        raw, used = route_llm(state, PLAN_PROMPT, user)
+        raw, used = route_llm(state, "plan", PLAN_PROMPT, user)
         data = parse_json(raw)
         valid = (
             isinstance(data, dict)
@@ -188,7 +191,7 @@ def build_graph(vectorstore):
     def grade(state):
         user = json.dumps({"question": state["question"],
                            "context": base.format_context(state["docs"])})
-        raw, used = route_llm(state, GRADE_PROMPT, user)
+        raw, used = route_llm(state, "grade", GRADE_PROMPT, user)
         data = parse_json(raw)
         if isinstance(data, dict) and isinstance(data.get("sufficient"), bool):
             sufficient, missing, note = data["sufficient"], str(data.get("missing") or ""), ""
@@ -201,7 +204,7 @@ def build_graph(vectorstore):
     def rewrite(state):
         user = json.dumps({"question": state["question"], "missing": state["missing"],
                            "tried": state["sub_queries"]})
-        raw, used = route_llm(state, REWRITE_PROMPT, user)
+        raw, used = route_llm(state, "rewrite", REWRITE_PROMPT, user)
         new = (raw or "").strip().strip('"').strip()
         if not new or new in state["sub_queries"] or new == state["question"]:
             new = state["missing"] or state["question"]
@@ -210,10 +213,11 @@ def build_graph(vectorstore):
                 "trace": [f"rewrite:{new}"]}
 
     def generate(state):
-        text, answered_by = base.generate_from_context(
-            state["question"], base.format_context(state["docs"]),
-            history=state["history"], model_label=state["model_label"],
-            allow_fallback=state["allow_fallback"])
+        with usage.step("generate"):
+            text, answered_by = base.generate_from_context(
+                state["question"], base.format_context(state["docs"]),
+                history=state["history"], model_label=state["model_label"],
+                allow_fallback=state["allow_fallback"])
         return {"answer": text, "answered_by": answered_by,
                 "llm_calls": state["llm_calls"] + 1, "trace": ["generate"]}
 
@@ -225,12 +229,22 @@ def build_graph(vectorstore):
             return "generate"
         return "rewrite" if state["rewrites"] < MAX_REWRITES else "generate"
 
+    def traced(name, node):
+        """A Langfuse span per node execution when tracing is on (D-013),
+        with the node's state update as its output."""
+        @obs.observe(name=f"node:{name}")
+        def run(state):
+            update = node(state)
+            obs.update_span(output={k: v for k, v in update.items() if k != "docs"})
+            return update
+        return run
+
     g = StateGraph(RAGState)
-    g.add_node("plan", plan)
-    g.add_node("retrieve", retrieve)
-    g.add_node("grade", grade)
-    g.add_node("rewrite", rewrite)
-    g.add_node("generate", generate)
+    g.add_node("plan", traced("plan", plan))
+    g.add_node("retrieve", traced("retrieve", retrieve))
+    g.add_node("grade", traced("grade", grade))
+    g.add_node("rewrite", traced("rewrite", rewrite))
+    g.add_node("generate", traced("generate", generate))
 
     g.add_edge(START, "plan")
     g.add_edge("plan", "retrieve")
@@ -256,7 +270,25 @@ def run_agentic(vectorstore, question, history=None, model_label=None, allow_fal
     """Run the agentic engine. Same return shape as answer.answer_question:
     (answer_text, docs, trace)."""
     start = time.perf_counter()
-    final = get_graph(vectorstore).invoke({
+    with usage.meter() as calls:
+        final = _invoke(vectorstore, question, history, model_label, allow_fallback)
+    trace = {
+        "engine": "agentic",
+        "route": final["route"],
+        "sub_queries": final["sub_queries"],
+        "rewrites": final["rewrites"],
+        "llm_calls": final["llm_calls"],
+        "latency_ms": round((time.perf_counter() - start) * 1000),
+        "answered_by": final["answered_by"],
+        "routing_models": sorted(set(final["routing_models"])),
+        "steps": final["trace"],
+        "usage": usage.summarise(calls),
+    }
+    return final["answer"], final["docs"], trace
+
+
+def _invoke(vectorstore, question, history, model_label, allow_fallback):
+    return get_graph(vectorstore).invoke({
         "question": question,
         "history": history or [],
         "model_label": model_label,
@@ -273,18 +305,6 @@ def run_agentic(vectorstore, question, history=None, model_label=None, allow_fal
         "answer": None,
         "answered_by": None,
     }, config={"recursion_limit": 20})  # safety net above MAX_REWRITES, not the cap itself
-    trace = {
-        "engine": "agentic",
-        "route": final["route"],
-        "sub_queries": final["sub_queries"],
-        "rewrites": final["rewrites"],
-        "llm_calls": final["llm_calls"],
-        "latency_ms": round((time.perf_counter() - start) * 1000),
-        "answered_by": final["answered_by"],
-        "routing_models": sorted(set(final["routing_models"])),
-        "steps": final["trace"],
-    }
-    return final["answer"], final["docs"], trace
 
 
 if __name__ == "__main__":

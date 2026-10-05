@@ -19,6 +19,7 @@ and FastAPI runs `def` endpoints in a thread pool. Blocking calls inside an
 `async def` endpoint would stall the event loop for every other request.
 """
 
+from contextlib import asynccontextmanager
 from typing import Literal, Optional
 
 import gradio as gr
@@ -26,6 +27,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 import app as ui  # builds the vector store on import and exposes build_demo()
+import observability as obs
 from answer import MODEL_OPTIONS, answer_question
 
 MAX_QUESTION_CHARS = 500  # protects free-tier API quotas on a public demo
@@ -55,7 +57,14 @@ class AskResponse(BaseModel):
     trace: dict
 
 
+@asynccontextmanager
+async def lifespan(_app):
+    yield
+    obs.flush()  # send any buffered Langfuse traces before the process exits (D-013)
+
+
 api = FastAPI(
+    lifespan=lifespan,
     title="Pitchwise API",
     description="Grounded cricket Q&A with a linear RAG engine and a LangGraph agentic engine.",
     version="2.0.0",
@@ -69,6 +78,7 @@ def health():
         "chunks": ui.vectorstore._collection.count(),
         "engines": ["linear", "agentic"],
         "models": list(MODEL_OPTIONS.keys()),
+        "tracing": "langfuse" if obs.ENABLED else "off",
     }
 
 

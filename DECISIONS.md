@@ -11,6 +11,7 @@ alternatives considered, the reasoning, and the trade-offs explicitly accepted.
 **Part I — Architectural Decisions**
 D-001 through D-008 — ingestion and generation pipeline decisions.
 D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
+D-012 through D-013 — v3: token and cost accounting, request tracing.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -507,6 +508,85 @@ Spaces expect.
 so the image is large (several GB including CUDA libraries the CPU-only
 deployment doesn't use). A CPU-only PyTorch install would cut that
 substantially; deferred until the deployment is live.
+
+---
+
+## D-012 · Token and Cost Accounting on Every LLM Call
+
+**Date:** October 2026
+
+**Decision:** every LLM call records its input and output tokens, latency and
+list-price cost (`usage.py`). Each answer's trace carries the totals, a
+per-step breakdown (plan, grade, rewrite, generate) and one record per call,
+including failed attempts the fallback chain moved past. Evaluation rows
+store the answering usage and the judge's usage separately, and
+`evaluation/compare_runs.py` reports tokens and cost per question, per 1,000
+questions, per month at 10,000 questions a day, and per correct answer.
+
+**Why:** v2 could only say the agentic engine makes "2.2 LLM calls per
+question against 1". Calls are a poor unit of cost: a grading call reads
+every retrieved chunk, a planning call reads only the question, and output
+tokens cost several times more than input tokens. Tokens times price is
+what a team would actually pay, and cost per *correct* answer stops a cheap
+engine that answers badly from looking cheap.
+
+**How it works:**
+- *Tokens come from the provider's response* (`usage.prompt_tokens` /
+  `completion_tokens` for Groq and OpenRouter, `usage_metadata` for Gemini),
+  not from a local tokenizer, so the counts are what each provider bills.
+  If a provider omits them, the record says `tokens_reported: false` rather
+  than guessing.
+- *A meter per request, held in a `ContextVar`.* Calls deep inside the
+  LangGraph nodes record into the meter of the request that started them,
+  without a meter object threaded through every function; concurrent API
+  requests each get their own. A `step` context labels each call.
+- *Prices are list prices* (`usage.PRICES`, with the date they were
+  checked). Pitchwise runs on free tiers, so actual spend is $0; the list
+  price answers "what would this cost on a paid plan?". A model without a
+  price shows cost as unknown (`None`), never as $0.
+- *Failed attempts cost nothing but are counted*, so a run that leaned on
+  the fallback chain is visible in its usage.
+
+**Trade-offs accepted:** results rows are larger (one record per call).
+Runs made before this change have no usage, and the dashboard says so
+instead of showing zeros. Prices change; the table is dated and must be
+re-checked before quoting projections.
+
+---
+
+## D-013 · Optional Request Tracing with Langfuse
+
+**Date:** October 2026
+
+**Decision:** when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set,
+each question becomes one Langfuse trace: a span for the request, a span per
+graph node, a retriever span per search (query and chunks returned) and a
+generation per LLM call with its prompt, output, model, tokens and cost.
+Traces are tagged with the engine; evaluation runs group their traces under
+a session named after the results file. Without the keys, `observability.py`
+makes every hook a no-op and never imports Langfuse.
+
+**Why Langfuse:** an open-source, OpenTelemetry-based tracing tool built for
+LLM applications, with a free cloud tier and a self-hosted option. It shows
+the per-step tokens, cost and latency of a single request in one view,
+which is what debugging the agentic engine needs (why did this question
+take 7 calls?), and it is a tool teams already use, unlike a home-made
+dashboard.
+
+**Why optional:** the offline tests, CI and anyone cloning the repo must
+work without another account. Accounting (D-012) does not depend on
+tracing: token and cost numbers are always recorded in the trace and in
+evaluation rows. `PITCHWISE_TRACING=off` forces tracing off even with keys
+present; the test suite sets it so tests never send traces.
+
+**Verified offline:** with an in-memory span exporter, one agentic question
+produced one trace whose spans nest as request → node → generation, with
+model, token counts and cost on each generation.
+
+**Trade-offs accepted:** prompts and retrieved context are sent to Langfuse
+when tracing is on, which is fine for a public cricket knowledge base but
+would need masking for private data. Spans are exported in the background;
+batch jobs and the API flush on exit.
 
 ---
 

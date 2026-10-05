@@ -102,8 +102,8 @@ Design rules:
   engine falls back to v1 behaviour instead of crashing or guessing.
 - **Bounded cost:** at most 2 rewrites, so the worst case is 7 LLM calls.
 - **Traceable:** every answer returns a trace (route, sub-queries, rewrites,
-  LLM calls, latency, the model that answered and the model that routed),
-  shown in the UI and the API.
+  LLM calls, latency, the model that answered and the model that routed,
+  tokens and list-price cost), shown in the UI and the API.
 
 **Measured:** on the 104-question harness, with the answer model pinned per
 run, `spanning` accuracy went from **4.2/5** (October linear baseline) to **5.0/5** in **both**
@@ -115,6 +115,26 @@ comparison is against the default k=4. Full table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
+
+---
+
+## Cost, tokens and tracing
+
+Every LLM call records its input and output tokens, latency and list-price
+cost, taken from the provider's own usage report
+([`DECISIONS.md` D-012](./DECISIONS.md)). Each answer's trace shows the
+totals and a per-step breakdown (plan, grade, rewrite, generate), and every
+evaluation row stores them, with the judge's cost kept separate.
+`evaluation/compare_runs.py` turns them into tokens and cost per question,
+per 1,000 questions, per month at 10,000 questions a day, and per correct
+answer, plus the share of tokens each agentic step uses. Pitchwise itself
+runs on free tiers; list prices answer what it would cost on a paid plan.
+
+With Langfuse keys in `.env`, every question is also traced in
+[Langfuse](https://langfuse.com): one trace per question with a span per
+graph node, each search's query and results, and each LLM call's prompt,
+output, tokens and cost ([`DECISIONS.md` D-013](./DECISIONS.md)). Without
+keys, tracing is off and nothing else changes.
 
 ---
 
@@ -184,10 +204,12 @@ pitchwise/
 ├── ingest.py              document loading, chunking, embedding, vector store
 ├── answer.py               retrieval + multi-provider generation; engine switch
 ├── graph.py                 v2 agentic engine (LangGraph)
+├── usage.py                 token and cost accounting for every LLM call
+├── observability.py         optional Langfuse tracing (no-op without keys)
 ├── api.py                   FastAPI service (/ask, /health) + mounted chat UI
 ├── app.py                   Gradio chat interface
 ├── smoke.py                 live check of both engines on 10 questions
-├── tests/                   offline tests with a scripted fake LLM
+├── tests/                   offline tests with scripted fake LLMs and providers
 ├── Dockerfile               container for the API + UI
 ├── evaluator.py              visual evaluation dashboard
 ├── knowledge-base/           17 curated markdown documents

@@ -27,6 +27,9 @@ from openai import OpenAI
 
 load_dotenv(override=True)
 
+import observability as obs  # optional Langfuse tracing (D-013)
+import usage                 # token and cost accounting (D-012)
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
@@ -69,6 +72,7 @@ DEFAULT_MODEL_LABEL = "Groq: qwen3.8-27b (fastest, default)"
 FALLBACK_ORDER = list(MODEL_OPTIONS.keys())
 
 
+@obs.observe(name="retrieve", as_type="retriever")
 def retrieve_context(vectorstore, question, k=None):
     """Search the vector store for chunks relevant to the question.
     Returns the retrieved Document objects and a formatted context string.
@@ -80,6 +84,9 @@ def retrieve_context(vectorstore, question, k=None):
     retriever = vectorstore.as_retriever(search_kwargs={"k": retriever_k})
     docs = retriever.invoke(question)
     context = "\n\n".join(doc.page_content for doc in docs)
+    obs.update_span(input={"query": question, "k": retriever_k},
+                    output=[f"{d.metadata.get('source', '').split('/')[-1]} | "
+                            f"{d.metadata.get('header_2') or d.metadata.get('header_1') or ''}" for d in docs])
     return docs, context
 
 
@@ -103,7 +110,8 @@ def _history_to_openai_messages(history):
 
 
 def call_gemini(model, system_prompt, question, history=None, temperature=None):
-    """Call a Gemini model via LangChain, returning a plain string.
+    """Call a Gemini model via LangChain. Returns (text, input_tokens,
+    output_tokens); token counts are None if the response has no usage.
     Gemini's response.content can be a nested list-of-dicts structure
     (seen during exploration, tied to its extended reasoning mode) rather
     than a plain string, so this normalizes it either way."""
@@ -120,20 +128,24 @@ def call_gemini(model, system_prompt, question, history=None, temperature=None):
     messages.append(HumanMessage(content=question))
 
     response = llm.invoke(messages)
+    meta = getattr(response, "usage_metadata", None) or {}
+    tokens = (meta.get("input_tokens"), meta.get("output_tokens"))
 
     content = response.content
     if isinstance(content, str):
-        return content
+        return (content, *tokens)
     # nested format: list of dicts, each possibly containing a "text" field
     if isinstance(content, list):
         parts = [item.get("text", "") for item in content if isinstance(item, dict)]
-        return "".join(parts)
-    return str(content)
+        return ("".join(parts), *tokens)
+    return (str(content), *tokens)
 
 
 def call_openai_compatible(base_url, api_key, model, system_prompt, question, history=None, temperature=None):
     """Call a Groq or OpenRouter model — both expose an OpenAI-compatible
-    endpoint, so a single function handles both via a different base_url."""
+    endpoint, so a single function handles both via a different base_url.
+    Returns (text, input_tokens, output_tokens) from the response's usage
+    block (None if the provider doesn't send one)."""
     client = OpenAI(api_key=api_key, base_url=base_url)
 
     messages = [{"role": "system", "content": system_prompt}]
@@ -145,12 +157,14 @@ def call_openai_compatible(base_url, api_key, model, system_prompt, question, hi
     # generation path behaves exactly as it did in v1 (D-009).
     kwargs = {"temperature": temperature} if temperature is not None else {}
     response = client.chat.completions.create(model=model, messages=messages, **kwargs)
-    return response.choices[0].message.content
+    u = getattr(response, "usage", None)
+    return (response.choices[0].message.content,
+            getattr(u, "prompt_tokens", None), getattr(u, "completion_tokens", None))
 
 
-def call_model(provider, model, system_prompt, question, history=None, temperature=None):
-    """Route to the correct provider's call function. Returns a plain
-    string answer regardless of which provider handled it."""
+def _call_provider(provider, model, system_prompt, question, history=None, temperature=None):
+    """Route to the correct provider's call function.
+    Returns (text, input_tokens, output_tokens)."""
     if provider == "gemini":
         return call_gemini(model, system_prompt, question, history=history, temperature=temperature)
     elif provider == "groq":
@@ -161,6 +175,35 @@ def call_model(provider, model, system_prompt, question, history=None, temperatu
                                       history=history, temperature=temperature)
     else:
         raise ValueError(f"Unknown provider: {provider}")
+
+
+@obs.observe(name="llm-call", as_type="generation")
+def call_model(provider, model, system_prompt, question, history=None, temperature=None):
+    """Call one model and return its text. Every call, successful or not, is
+    recorded in the active usage meter (D-012) and, when tracing is on, as a
+    Langfuse generation with its tokens and list-price cost (D-013)."""
+    timer = usage.Timer()
+    try:
+        text, input_tokens, output_tokens = _call_provider(
+            provider, model, system_prompt, question, history=history, temperature=temperature)
+    except Exception as e:
+        usage.record(provider, model, None, None, timer.ms(), ok=False, error=e)
+        obs.update_generation(name=usage.current_step(), model=model, level="ERROR",
+                              status_message=str(e)[:500])
+        raise
+    usage.record(provider, model, input_tokens, output_tokens, timer.ms())
+    cost = usage.cost_usd(model, input_tokens, output_tokens)
+    obs.update_generation(
+        name=usage.current_step(),
+        model=model,
+        input=[{"role": "system", "content": system_prompt}, *(history or []),
+               {"role": "user", "content": question}],
+        output=text,
+        metadata={"provider": provider},
+        usage_details={k: v for k, v in (("input", input_tokens), ("output", output_tokens)) if v is not None},
+        cost_details=({"total": cost} if cost is not None else None),
+    )
+    return text
 
 
 def build_try_order(model_label=None, allow_fallback=True):
@@ -213,6 +256,18 @@ def format_context(docs):
 
 def answer_question(vectorstore, question, history=None, model_label=None, k=None,
                     engine="linear", allow_fallback=True):
+    """Answer a question with one of two engines; see _answer_question.
+    Wraps the call in one Langfuse trace when tracing is on (D-013)."""
+    with obs.trace_attributes(trace_name="pitchwise-answer", tags=[engine],
+                              metadata={"engine": engine, "model_label": model_label or "default",
+                                        "pinned": str(not allow_fallback)}):
+        return _answer_question(vectorstore, question, history=history, model_label=model_label,
+                                k=k, engine=engine, allow_fallback=allow_fallback)
+
+
+@obs.observe(name="answer_question")
+def _answer_question(vectorstore, question, history=None, model_label=None, k=None,
+                     engine="linear", allow_fallback=True):
     """Answer a question with one of two engines.
 
     engine="linear"  — v1 pipeline: retrieve k chunks, generate once.
@@ -224,8 +279,10 @@ def answer_question(vectorstore, question, history=None, model_label=None, k=Non
 
     Returns (answer_text, docs, trace). docs is the list of Document objects
     used as context; trace is a dict describing what the engine did
-    (route, sub-queries, rewrites, LLM calls, latency, model that answered).
+    (route, sub-queries, rewrites, LLM calls, latency, model that answered,
+    and token usage with list-price cost, D-012).
     """
+    obs.update_span(input={"question": question, "engine": engine})
     if engine == "agentic":
         from graph import run_agentic  # imported lazily: langgraph only needed for this engine
         return run_agentic(vectorstore, question, history=history,
@@ -234,10 +291,12 @@ def answer_question(vectorstore, question, history=None, model_label=None, k=Non
         raise ValueError(f"Unknown engine: {engine}")
 
     start = time.perf_counter()
-    docs, context = retrieve_context(vectorstore, question, k=k)
-    answer_text, answered_by = generate_from_context(question, context, history=history,
-                                                     model_label=model_label,
-                                                     allow_fallback=allow_fallback)
+    with usage.meter() as calls:
+        docs, context = retrieve_context(vectorstore, question, k=k)
+        with usage.step("generate"):
+            answer_text, answered_by = generate_from_context(question, context, history=history,
+                                                             model_label=model_label,
+                                                             allow_fallback=allow_fallback)
     trace = {
         "engine": "linear",
         "route": None,
@@ -248,7 +307,9 @@ def answer_question(vectorstore, question, history=None, model_label=None, k=Non
         "answered_by": answered_by,
         "routing_models": [],
         "steps": [f"retrieve:{len(docs)}", "generate"],
+        "usage": usage.summarise(calls),
     }
+    obs.update_span(output={"answer": answer_text, "trace": {k: v for k, v in trace.items() if k != "usage"}})
     return answer_text, docs, trace
 
 

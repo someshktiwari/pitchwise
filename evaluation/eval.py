@@ -28,6 +28,8 @@ from pydantic import BaseModel, Field
 
 from evaluation.test import TestQuestion, load_tests
 from answer import answer_question, retrieve_context, call_model, MODEL_OPTIONS
+import observability as obs
+import usage
 
 # Judge model: Gemini 3.5-flash-lite — deliberately a different provider
 # than the default answer-generation model (Groq qwen3.8-27b, per D-006).
@@ -176,7 +178,12 @@ A generated answer that confidently answers anyway, even if factually correct
 in the real world, should score 1 on accuracy — it is not grounded in the
 provided knowledge base, which is the actual failure being measured here."""
 
-    raw_response = call_model(JUDGE_PROVIDER, JUDGE_MODEL, judge_system_prompt, judge_question)
+    # The judge's tokens are metered separately from the answer's, so a run
+    # reports what answering costs and what grading costs (D-012).
+    with usage.meter() as judge_calls, usage.step("judge"):
+        raw_response = call_model(JUDGE_PROVIDER, JUDGE_MODEL, judge_system_prompt, judge_question)
+    if trace_out is not None:
+        trace_out["judge_usage"] = usage.summarise(judge_calls)
     parsed = _parse_judge_json(raw_response)
     answer_eval = AnswerEval(**parsed)
 
@@ -293,8 +300,10 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
         try:
             retrieval_result = _retry(lambda: evaluate_retrieval(vectorstore, test))
             trace = {}
-            answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(
-                vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace))
+            with obs.trace_attributes(session_id=Path(RESULTS_FILE).stem,
+                                      metadata={"category": test.category}):
+                answer_result, generated_answer, _ = _retry(lambda: evaluate_answer(
+                    vectorstore, test, engine=engine, allow_fallback=allow_fallback, trace_out=trace))
         except Exception as e:
             print(f"  FAILED after retries: {e}\n")
             continue
@@ -318,6 +327,8 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
             "latency_ms": trace.get("latency_ms"),
             "answered_by": trace.get("answered_by"),
             "routing_models": trace.get("routing_models"),
+            "usage": trace.get("usage"),              # answering: tokens, list-price cost, per call
+            "judge_usage": trace.get("judge_usage"),  # grading, kept separate
         }
         results_file.write(json.dumps(result_record, ensure_ascii=False) + "\n")
         results_file.flush()  # write to disk immediately, don't wait for buffer
@@ -326,9 +337,14 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
 
         print(f"  Retrieval: MRR={retrieval_result.mrr:.2f} nDCG={retrieval_result.ndcg:.2f} coverage={retrieval_result.keyword_coverage:.0f}%")
         print(f"  Answer: accuracy={answer_result.accuracy:.1f} completeness={answer_result.completeness:.1f} relevance={answer_result.relevance:.1f}")
+        u = trace.get("usage") or {}
+        if u:
+            cost = "n/a" if u.get("cost_usd") is None else f"${u['cost_usd']:.6f}"
+            print(f"  Usage: {u.get('input_tokens')} in / {u.get('output_tokens')} out tokens, {cost} at list price")
         print()
 
     results_file.close()
+    obs.flush()
 
     # Include previously-completed results (from a resumed run) in the summary
     all_results = results
@@ -352,6 +368,13 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
     overall_relevance = sum(r["answer_relevance"] for r in all_results) / len(all_results)
     print()
     print(f"OVERALL (n={len(all_results)}): accuracy={overall_accuracy:.1f}/5 completeness={overall_completeness:.1f}/5 relevance={overall_relevance:.1f}/5")
+
+    metered = [r["usage"] for r in all_results if r.get("usage")]
+    if metered:
+        tokens = sum(u["total_tokens"] for u in metered) / len(metered)
+        costs = [u["cost_usd"] for u in metered if u["cost_usd"] is not None]
+        print(f"USAGE (n={len(metered)}): {tokens:.0f} tokens per question"
+              + (f", ${sum(costs) / len(costs) * 1000:.3f} per 1,000 questions at list price" if costs else ""))
 
     return all_results
 
