@@ -104,10 +104,13 @@ Design rules:
 - **Traceable:** every answer returns a trace (route, sub-queries, rewrites,
   LLM calls, latency, model that answered), shown in the UI and the API.
 
-**Status:** built and covered by offline tests (`tests/`). The 104-question
-comparison against the v1 baseline is the next step; results will be added
-to [`EVAL_RESULTS.md`](./EVAL_RESULTS.md) once measured. No accuracy claims
-for v2 until then.
+**Measured:** on the 104-question harness, with one model pinned per run,
+`spanning` accuracy went from **4.2/5** (linear) to **5.0/5** in **both**
+agentic runs, while `direct_fact` stayed at 5.0/5. Of the 4 linear failures
+it fixed, 3 came from retrieval (final-context keyword coverage 0-50% to
+100%); the 4th was model variance. It averages 2.2 LLM calls per question
+against 1 for linear. Full table, failures and method:
+[`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
 ---
 
@@ -144,6 +147,8 @@ uv run python evaluator.py                    # visual evaluation dashboard
 uv run python -m evaluation.eval              # full 104-question run (linear engine)
 uv run python -m evaluation.eval --engine agentic --pin-model \
     --results evaluation/results_agentic_r1.jsonl   # agentic run, one model, own results file
+uv run python -m evaluation.mechanism         # keyword coverage of the agentic engine's final context
+uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 
 Ask through the API:
@@ -184,6 +189,9 @@ pitchwise/
 │   ├── test.py                test question schema + loader
 │   ├── eval.py                 retrieval + LLM-judge evaluation logic
 │   ├── compare_k.py             retriever k-value comparison tooling
+│   ├── mechanism.py             final-context keyword coverage for the agentic engine
+│   ├── compare_runs.py          dashboard comparing saved evaluation runs
+│   ├── results_*.jsonl          saved runs: linear baseline and two agentic runs
 │   └── tests.jsonl               104 test questions
 ├── DECISIONS.md               every architecture decision, dated and reasoned
 └── EVAL_RESULTS.md            evaluation methodology and results, in plain terms
@@ -204,10 +212,11 @@ existing for show.
 Pitchwise is presented here as a working, evaluated project — not a
 finished product. Concrete next steps, in rough priority order:
 
-- **Measure the agentic engine** — run the 104-question harness on both
-  engines in the same week (two agentic runs, one model pinned per run) plus
-  a k=8 linear control, and report per-category accuracy, LLM calls and
-  latency in [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
+- **Fix what the v2 runs exposed** — restructure the knowledge-base
+  sections that hide facts under generic headings (the Ben Stokes
+  retirement question failed in every run for this reason), correct the
+  mislabelled and under-specified test questions found in C-004, and
+  re-baseline both engines.
 - **A stronger knowledge base** — expand beyond the current 17 curated
   documents with more players, tournaments, and historical depth, and use
   the evaluation harness to verify retrieval quality holds as the knowledge
