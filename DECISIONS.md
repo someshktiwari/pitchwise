@@ -12,6 +12,7 @@ alternatives considered, the reasoning, and the trade-offs explicitly accepted.
 D-001 through D-008 — ingestion and generation pipeline decisions.
 D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 D-012 through D-013 — v3: token and cost accounting, request tracing.
+D-014 through D-015 — v3: knowledge base expansion, saved index.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -195,6 +196,9 @@ queries.
 ---
 
 ## D-005 · No Local-Only Persistence, Despite the Re-Embedding Cost
+
+> **Superseded by D-015 (October 2026)** once the knowledge base grew past
+> what is cheap to re-embed on every start.
 
 **Decision:** the vector store is rebuilt from scratch on every run, in every
 environment. The project currently runs locally and is presented via GitHub
@@ -590,6 +594,92 @@ batch jobs and the API flush on exit.
 
 ---
 
+## D-014 · Knowledge Base Expansion: Curated Core plus Wikipedia Articles
+
+**Date:** October 2026
+
+**Decision:** keep the 17 hand-written documents as a curated core and add
+about 130 Wikipedia articles (players, national teams, tournaments, grounds,
+rules and the game), fetched and converted by `scripts/build_kb.py` from the
+list in `knowledge-base/wikipedia-sources.txt`, into
+`knowledge-base/wikipedia/<category>/`. A new test set,
+`evaluation/tests_v3.jsonl`, covers the new content; the 104-question v2 set
+stays frozen so the v2 results remain reproducible.
+
+**Why:** 17 documents and 81 chunks made retrieval easy: few near-duplicate
+chunks compete for the top 4 places. A knowledge base with thousands of
+chunks tests whether retrieval, the grounding prompt and the agentic engine
+still hold up when the right chunk has many plausible neighbours. That is
+the condition a real deployment faces.
+
+**How the conversion keeps D-001 to D-003 true at scale:**
+- *Headings name their subject* ("## Brian Lara: Early life"), and every
+  Wikipedia chunk starts with its heading, because the splitter removes
+  headings from chunk text and article bodies rarely repeat the name. This
+  is the D-003 fix (the Bradman "Career Statistics" bug) done by code
+  instead of by hand.
+- *Long sections are split again.* all-MiniLM-L6-v2 reads at most 256 word
+  pieces (about 1,000 characters) and ignores the rest, so Wikipedia
+  sections longer than 1,000 characters are split into overlapping pieces
+  (150 characters), each keeping its heading. Every curated section is
+  shorter than that (the longest is 708 characters), so curated chunks are
+  split on headings only, exactly as before.
+- *Reference sections are dropped* (References, External links, See also and
+  similar), and each article is capped at 20,000 characters, cut only at a
+  section boundary, so one very long article can't dominate the index.
+- *No subject exists twice.* The script refuses any article whose resolved
+  title is a curated subject, so the knowledge base never holds two versions
+  of the same facts.
+
+**Licensing:** Wikipedia text is CC BY-SA 4.0. Every generated file records
+its title, the exact revision used (an `oldid` link), the retrieval date and
+the licence in front matter, which `ingest.py` keeps as chunk metadata.
+
+**Trade-offs accepted:**
+- Wikipedia changes; the revision recorded in each file makes the knowledge
+  base reproducible, and re-running the script is a deliberate update.
+- About half of the v2 `out_of_scope` questions become answerable (MS Dhoni,
+  Rohit Sharma, Muttiah Muralitharan, the Big Bash League, the
+  Duckworth–Lewis–Stern method and others). They are re-checked and
+  relabelled in the v3 test set rather than silently scored as failures.
+- A bigger index means more retrieval competition for the original
+  questions; the v3 re-baseline measures whether that costs accuracy.
+
+---
+
+## D-015 · Save the Index and Reuse It Until the Knowledge Base Changes
+
+**Date:** October 2026 · **Supersedes:** D-005
+
+**Decision:** `ingest()` saves the built Chroma index under `.index/` (or
+`PITCHWISE_INDEX_DIR`), in a folder named after a fingerprint: a SHA-256 hash
+of every knowledge-base file plus the embedding model and chunking
+settings. On start, a saved index with a matching fingerprint is loaded;
+anything else is rebuilt. The Docker image builds the index at image build
+time, so a cold start on a hosting tier loads it instead of embedding.
+
+**Why D-005 no longer holds:** D-005 rebuilt the index on every start
+because 81 chunks took a few seconds to embed. With the Wikipedia articles
+there are thousands of chunks; embedding them on a 2-vCPU free host on
+every cold start would add a minute or more before the first answer.
+
+**Why a fingerprint and not a timestamp:** the index is correct only for
+the exact files and settings it was built from. Hashing the content means
+an edit anywhere in the knowledge base, a new embedding model or a changed
+chunk size forces a rebuild, and nothing else does.
+
+**Why a folder per fingerprint:** Chroma keeps one client open per folder
+inside a process. Rebuilding in place would delete files an open client
+still uses. Building into a new folder and removing the old ones afterwards
+avoids that, and an interrupted build never replaces a good index.
+
+**Trade-offs accepted:** two processes building the same new index at the
+same moment could collide; in practice the app and an evaluation run share
+one index that is built once. `persist_directory=None` still builds in
+memory, which the tests use.
+
+---
+
 # Part II — Corrections
 
 > Every significant bug, incorrect assumption, and deliberate change made during
@@ -803,6 +893,29 @@ model per run" for those runs.
 **Side effect, intended:** in the app, choosing a model in the UI or the API
 now applies to the routing calls as well as the answer (with fallback, as
 before), instead of routing always starting from the default model.
+
+---
+
+## C-006 · Four Curated Sections Missed the D-003 Restructuring
+
+**What D-003 said:** every section header and opening line repeats its
+subject's name, so a chunk is unambiguous once separated from its document.
+
+**What was found:** four player files (Ben Stokes, Virat Kohli, Kane
+Williamson, Jasprit Bumrah) still had a bare `## Personal` section whose
+text never named the player. The cost was measured: "Has Ben Stokes retired
+from any international format?" (Q83) failed in every recorded run, v1 and
+v2, linear and agentic, because the retirement fact sat in that unnamed
+chunk.
+
+**Fix:** the four headings and opening lines now name the player
+(for example "## Ben Stokes's Honours and Retirement from ODI and T20I
+Cricket"), with no facts changed. This alters four curated chunks, so the v2
+results are not re-scored with it; the v3 test runs include the fix.
+
+**Prevention:** the Wikipedia conversion (D-014) builds every heading as
+"Subject: Section" and prefixes every chunk with it, so this mistake cannot
+recur in generated documents.
 
 ---
 *Author: Somesh Kant Tiwari*

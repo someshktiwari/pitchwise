@@ -174,6 +174,7 @@ uv run python -m evaluation.eval --engine agentic --pin-model \
     --results evaluation/results_agentic_new.jsonl  # agentic run, one model, its own results file
 # Each run needs a new --results file: an existing file is resumed, not overwritten.
 uv run python -m evaluation.mechanism         # keyword coverage of the agentic engine's final context
+uv run python scripts/build_kb.py             # fetch the Wikipedia part of the knowledge base (needs internet)
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 
@@ -212,7 +213,8 @@ pitchwise/
 ├── tests/                   offline tests with scripted fake LLMs and providers
 ├── Dockerfile               container for the API + UI
 ├── evaluator.py              visual evaluation dashboard
-├── knowledge-base/           17 curated markdown documents
+├── knowledge-base/           curated documents, plus wikipedia/ built by scripts/build_kb.py
+├── scripts/build_kb.py       fetches and converts the Wikipedia articles (D-014)
 ├── evaluation/
 │   ├── test.py                test question schema + loader
 │   ├── eval.py                 retrieval + LLM-judge evaluation logic

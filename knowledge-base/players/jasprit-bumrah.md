@@ -29,6 +29,6 @@ He has served as Test vice-captain since December 2023 and has captained India i
 - Named in the ICC Men's Test Team of the Year (2018, 2024), ODI Team of the Year (2017, 2018), and T20I Team of the Year
 - Holds the best career bowling average among Indian bowlers with 50+ ODI wickets
 
-## Personal
+## Jasprit Bumrah's Personal Life
 
-Married to sports anchor Sanjana Ganesan in 2021.
+Jasprit Bumrah married sports anchor Sanjana Ganesan in 2021.

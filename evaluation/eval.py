@@ -266,7 +266,8 @@ def _load_completed_questions():
     return completed
 
 
-def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True):
+def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True,
+                        tests_file=None):
     """Run retrieval + answer evaluation across the full test set.
 
     Saves each result to evaluation/results.jsonl as soon as it's computed
@@ -283,7 +284,8 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
         RESULTS_FILE = str(results_file)  # one file per run, never mix two runs (D-010)
     print(f"Engine: {engine} | fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
 
-    tests = load_tests()
+    tests = load_tests(tests_file)
+    print(f"Test set: {tests_file or 'evaluation/tests.jsonl'} ({len(tests)} questions)")
     already_done = _load_completed_questions() if resume else set()
     if already_done:
         print(f"Resuming: {len(already_done)} questions already completed, skipping those.\n")
@@ -391,8 +393,10 @@ if __name__ == "__main__":
     parser.add_argument("--pin-model", action="store_true",
                         help="disable provider fallback so the whole run uses one model (D-010)")
     parser.add_argument("--no-resume", action="store_true", help="ignore existing results in the file")
+    parser.add_argument("--tests", help="test set file (default: evaluation/tests.jsonl, the frozen v2 set)")
     args = parser.parse_args()
 
     store = ingest()
     run_full_evaluation(store, resume=not args.no_resume, engine=args.engine,
-                        results_file=args.results, allow_fallback=not args.pin_model)
+                        results_file=args.results, allow_fallback=not args.pin_model,
+                        tests_file=args.tests)

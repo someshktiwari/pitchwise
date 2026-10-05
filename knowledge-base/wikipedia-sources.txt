@@ -1,0 +1,154 @@
+# Wikipedia articles added to the knowledge base by scripts/build_kb.py
+# (DECISIONS.md D-014). One "category: Article title" per line.
+#
+# Rules:
+# - No subject that a curated document already covers (the 17 files under
+#   players/, formats/, tournaments/, icc/). build_kb.py refuses those, so
+#   the knowledge base never holds two versions of the same facts.
+# - Titles are looked up with redirects followed; the exact revision used is
+#   recorded in each generated file.
+
+# Players: men's greats across eras and nations
+players: W. G. Grace
+players: Jack Hobbs
+players: Wally Hammond
+players: Garfield Sobers
+players: Sunil Gavaskar
+players: Viv Richards
+players: Imran Khan
+players: Kapil Dev
+players: Richard Hadlee
+players: Ian Botham
+players: Allan Border
+players: Malcolm Marshall
+players: Wasim Akram
+players: Waqar Younis
+players: Curtly Ambrose
+players: Courtney Walsh
+players: Brian Lara
+players: Steve Waugh
+players: Shane Warne
+players: Muttiah Muralitharan
+players: Anil Kumble
+players: Glenn McGrath
+players: Rahul Dravid
+players: Sourav Ganguly
+players: Inzamam-ul-Haq
+players: Jacques Kallis
+players: Ricky Ponting
+players: Adam Gilchrist
+players: Matthew Hayden
+players: Virender Sehwag
+players: Kumar Sangakkara
+players: Mahela Jayawardene
+players: Graeme Smith
+players: Shaun Pollock
+players: Dale Steyn
+players: AB de Villiers
+players: Hashim Amla
+players: MS Dhoni
+players: Yuvraj Singh
+players: Kevin Pietersen
+players: Alastair Cook
+players: James Anderson
+players: Stuart Broad
+players: Brendon McCullum
+players: Chris Gayle
+players: Shakib Al Hasan
+players: Rohit Sharma
+players: Ravichandran Ashwin
+players: Ravindra Jadeja
+players: Joe Root
+players: Steve Smith (cricketer)
+players: Pat Cummins
+players: Mitchell Starc
+players: Kagiso Rabada
+players: Trent Boult
+players: Babar Azam
+players: Shaheen Afridi
+players: Rashid Khan
+players: Shubman Gill
+players: Rishabh Pant
+
+# Players: women
+players: Rachael Heyhoe Flint
+players: Belinda Clark
+players: Charlotte Edwards
+players: Mithali Raj
+players: Jhulan Goswami
+players: Ellyse Perry
+players: Meg Lanning
+players: Stafanie Taylor
+players: Suzie Bates
+players: Smriti Mandhana
+players: Harmanpreet Kaur
+
+# National teams
+teams: India national cricket team
+teams: Australia national cricket team
+teams: England cricket team
+teams: South Africa national cricket team
+teams: New Zealand national cricket team
+teams: Pakistan national cricket team
+teams: Sri Lanka national cricket team
+teams: West Indies cricket team
+teams: Bangladesh national cricket team
+teams: Afghanistan national cricket team
+teams: Zimbabwe national cricket team
+teams: Ireland cricket team
+
+# Tournaments, leagues and series
+tournaments: ICC Champions Trophy
+tournaments: ICC World Test Championship
+tournaments: Women's Cricket World Cup
+tournaments: ICC Women's T20 World Cup
+tournaments: Under-19 Cricket World Cup
+tournaments: Asia Cup
+tournaments: Border–Gavaskar Trophy
+tournaments: Frank Worrell Trophy
+tournaments: Basil D'Oliveira Trophy
+tournaments: Chappell–Hadlee Trophy
+tournaments: Big Bash League
+tournaments: Pakistan Super League
+tournaments: Caribbean Premier League
+tournaments: The Hundred (cricket)
+tournaments: SA20
+tournaments: Women's Premier League (cricket)
+tournaments: Ranji Trophy
+tournaments: County Championship
+tournaments: Sheffield Shield
+tournaments: Plunket Shield
+
+# Grounds
+grounds: Lord's
+grounds: Melbourne Cricket Ground
+grounds: Sydney Cricket Ground
+grounds: The Oval
+grounds: Eden Gardens
+grounds: Wankhede Stadium
+grounds: Narendra Modi Stadium
+grounds: M. Chinnaswamy Stadium
+grounds: Old Trafford Cricket Ground
+grounds: Headingley Cricket Ground
+grounds: Edgbaston Cricket Ground
+grounds: Adelaide Oval
+grounds: The Gabba
+grounds: Newlands Cricket Ground
+grounds: Gaddafi Stadium
+
+# Rules, technology and the game
+game: Leg before wicket
+game: Decision Review System
+game: Duckworth–Lewis–Stern method
+game: Follow-on
+game: Super Over
+game: Fielding restrictions (cricket)
+game: Fast bowling
+game: Spin bowling
+game: Wicket-keeper
+game: Day/night cricket
+game: Bodyline
+game: Ball tampering
+game: Board of Control for Cricket in India
+game: Marylebone Cricket Club
+game: Women's cricket

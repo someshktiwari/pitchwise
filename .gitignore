@@ -43,3 +43,6 @@ Thumbs.db
 *.log
 # pytest
 .pytest_cache/
+
+# Saved vector index (D-015), rebuilt from knowledge-base/ when it changes
+.index/

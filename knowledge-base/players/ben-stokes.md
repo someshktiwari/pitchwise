@@ -25,6 +25,6 @@ Ben Stokes is one of the most celebrated all-rounders in modern cricket, known e
 - Scored an unbeaten 135 at Headingley in the 2019 Ashes, one of the greatest innings in Test history, won off the last wicket
 - Captains England's Test team, having led the "Bazball" era of aggressive Test cricket
 
-## Personal
+## Ben Stokes's Honours and Retirement from ODI and T20I Cricket
 
-Awarded an OBE for services to cricket. Retired from ODI cricket after the 2023 World Cup and from T20Is in 2025, continuing to play and captain in Test cricket.
+Ben Stokes was awarded an OBE for services to cricket. Ben Stokes retired from ODI cricket after the 2023 World Cup and from T20Is in 2025, continuing to play and captain in Test cricket.

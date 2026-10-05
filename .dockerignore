@@ -11,3 +11,4 @@ screenshots/
 evaluation/*.jsonl
 evaluation/*.json
 .DS_Store
+.index/

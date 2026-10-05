@@ -25,6 +25,6 @@ Kane Williamson is regarded as one of the "Fab Four" modern batting greats along
 - Widely praised for his sportsmanship, including offering to share the 2019 World Cup trophy with England after the controversial boundary-count tiebreaker
 - Known as one of the most technically correct and consistent batters of his generation across all three formats
 
-## Personal
+## Kane Williamson's Franchise Career and Standing
 
-Has played franchise cricket worldwide, including stints with Sunrisers Hyderabad and Gujarat Titans in the IPL, Yorkshire in county cricket, and various T20 leagues. Regarded as a calming, senior presence in the New Zealand dressing room even after stepping back from full-time captaincy duties.
+Kane Williamson has played franchise cricket worldwide, including stints with Sunrisers Hyderabad and Gujarat Titans in the IPL, Yorkshire in county cricket, and various T20 leagues. Regarded as a calming, senior presence in the New Zealand dressing room even after stepping back from full-time captaincy duties.

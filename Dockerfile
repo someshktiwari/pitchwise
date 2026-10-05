@@ -23,6 +23,10 @@ RUN uv run --no-sync python -c "from sentence_transformers import SentenceTransf
 
 COPY . .
 
+# Build the vector index into the image (D-015), so a cold start loads it
+# instead of embedding thousands of chunks. Needs no API keys.
+RUN uv run --no-sync python -c "import ingest; ingest.ingest()"
+
 # Run as a non-root user (also what Hugging Face Spaces expects).
 RUN useradd --create-home --uid 1000 appuser && chown -R appuser /app
 USER appuser

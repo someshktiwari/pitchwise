@@ -30,6 +30,6 @@ He retired from Test cricket in 2025 and from T20I cricket in 2024, remaining ac
 - Scored Test centuries in and against every Test-playing nation except Bangladesh
 - Known as the "Chase Master" for his exceptional record batting second in ODI run chases
 
-## Personal
+## Virat Kohli's Personal Life
 
-Married to actor Anushka Sharma since 2017. Known for his intense fitness regimen, which has influenced a generation of Indian cricketers' approach to conditioning.
+Virat Kohli has been married to actor Anushka Sharma since 2017. Known for his intense fitness regimen, which has influenced a generation of Indian cricketers' approach to conditioning.
