@@ -6,8 +6,8 @@ grounded strictly in a curated knowledge base, not general model knowledge.
 
 Built end-to-end: document ingestion, chunking, embeddings, vector search,
 multi-provider LLM generation with automatic fallback, a LangGraph agentic
-engine, a FastAPI service and chat interface, and a 104-question evaluation harness that found and fixed a real
-grounding gap. Every architectural decision — and every mistake found and
+engine, a FastAPI service and chat interface, and an evaluation harness
+(104 questions in v2, 177 in v3) that found and fixed a real grounding gap. Every architectural decision — and every mistake found and
 corrected along the way — is dated and reasoned in
 [`DECISIONS.md`](./DECISIONS.md).
 
@@ -42,7 +42,7 @@ knowledge-base/          17 curated documents + about 130 Wikipedia articles (ab
        │
        ├──▶ api.py              FastAPI: POST /ask, GET /health, chat UI mounted at /
        ├──▶ app.py              Gradio chat interface (engine toggle + per-answer trace)
-       └──▶ evaluation/         104-question eval harness (retrieval + LLM-judge), per-engine runs
+       └──▶ evaluation/         eval harness (retrieval + LLM-judge), v2: 104 questions, v3: 177
 ```
 
 **Multi-provider by design:** Pitchwise can generate answers via Gemini,
@@ -110,8 +110,9 @@ run, `spanning` accuracy went from **4.2/5** (October linear baseline) to **5.0/
 agentic runs, while `direct_fact` stayed at 5.0/5. Of the 4 linear failures
 it fixed, 3 came from retrieval (final-context keyword coverage 0-50% to
 100%); the 4th was model variance. It averages 2.2 LLM calls per question
-against 1 for linear. A k=8 linear control was planned but not run, so the
-comparison is against the default k=4. Full table, failures and method:
+against 1 for linear. A k=8 linear control was planned but not run in v2, so
+this comparison is against the default k=4; it was run in v3 (D-017). Full
+table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
@@ -131,19 +132,22 @@ answer, plus the share of tokens each agentic step uses. Pitchwise itself
 runs on free tiers; list prices answer what it would cost on a paid plan.
 
 With Langfuse keys in `.env`, every question is also traced in
-[Langfuse](https://langfuse.com): one trace per question with a span per
-graph node, each search's query and results, and each LLM call's prompt,
+[Langfuse](https://langfuse.com): one trace per question asked through the app
+or the API, with a span per graph node, each search's query and results, and each LLM call's prompt,
 output, tokens and cost ([`DECISIONS.md` D-013](./DECISIONS.md)).
 Evaluation runs also attach the judge's scores (accuracy, completeness,
 relevance) and keyword coverage to each answer's trace, so every answer
-the judge scored low can be filtered and opened in one click. Without keys,
+the judge scored low can be filtered and opened in one click. (An evaluation
+question also produces two smaller traces: the retrieval-metrics search and
+the judge's call.) Without keys,
 tracing is off and nothing else changes.
 
 ---
 
 ## Evaluation
 
-A 104-question harness across four categories (direct facts, multi-fact
+A test set across four categories (104 questions in v2, frozen; 177 in v3
+for the expanded knowledge base) (direct facts, multi-fact
 compound questions, temporal/recency questions, and out-of-scope questions
 designed to test grounding) — each scored on retrieval quality and answer
 quality independently.
@@ -229,7 +233,7 @@ pitchwise/
 │   ├── compare_k.py             retriever k-value comparison tooling
 │   ├── mechanism.py             final-context keyword coverage for the agentic engine
 │   ├── compare_runs.py          dashboard comparing saved evaluation runs
-│   ├── results_*.jsonl          saved runs: linear baseline and two agentic runs
+│   ├── results_*.jsonl          saved runs: v1/v2 runs, and the v3 runs (results_v3_*)
 │   ├── build_tests_v3.py        builds and checks the v3 test set
 │   ├── tests_v3.jsonl           177 questions for the expanded knowledge base
 │   └── tests.jsonl               104 test questions (v2, frozen)

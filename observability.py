@@ -4,7 +4,9 @@ observability.py
 Optional request tracing with Langfuse (DECISIONS.md D-013).
 
 When LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY are set, every question
-becomes one Langfuse trace: a span for the request, a span per graph node
+asked through the app or the API becomes one Langfuse trace (an evaluation
+run adds a small trace each for its retrieval-metrics search and its judge
+call): a span for the request, a span per graph node
 (plan, retrieve, grade, rewrite, generate) and a generation per LLM call
 with its model, prompt, output, token usage and cost. Without the keys,
 everything here is a no-op and Langfuse is never imported, so the app,

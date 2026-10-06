@@ -95,7 +95,7 @@ in retrieval quality, the deciding factor became architecture:
 `all-MiniLM-L6-v2` runs locally with no API key, no network dependency, and
 no rate limits — directly relevant given Pitchwise's ingestion pipeline is
 designed to rebuild the vector store fresh on every app startup, a
-deliberate choice made so the project can be deployed to a free-tier host
+deliberate choice (since superseded by D-015, which saves the index) made so the project can be deployed to a free-tier host
 (e.g. Hugging Face Spaces) later without any rework, even though it
 currently runs locally and is presented via GitHub. A hosted embedding API
 would make every single app boot dependent on an external network call
@@ -375,6 +375,10 @@ category directly and separate these two effects with real data, rather
 than assuming which k value is "enough." Not yet run to completion — this
 remains the concrete next step, not a completed decision.
 
+**Update (October 2026):** the k question was answered by D-017 instead:
+a k=8 run through the main evaluation harness on the v3 `spanning`
+questions. `compare_k.py` is kept but was not used for it.
+
 ---
 
 ## D-008 · Silent Automatic Fallback Across Providers
@@ -397,7 +401,8 @@ working, responsive experience for that audience.
 
 **Trade-offs accepted:**
 - The user has no visibility into which model actually answered a given
-  question unless they check logs — acceptable for a demo-facing product at
+  question unless they check logs (since v2, the trace shown under each
+  answer names the model that answered, D-009) — acceptable for a demo-facing product at
   this scale, but would need to change for a context where users need to
   know which model handled their request (e.g. for cost attribution or
   reproducibility in a production setting)
@@ -466,7 +471,8 @@ silent duplication found in C-001.
 went from 4.2/5 (October linear baseline) to 5.0/5 in both agentic runs, with
 `direct_fact` unchanged at 5.0/5; 3 of the 4 fixed failures were traced to
 retrieval. Full results: [`EVAL_RESULTS.md`](./EVAL_RESULTS.md). The routing
-calls in those runs were not pinned to one model; see C-005.
+calls in those runs were not pinned to one model; see C-005. The k=8
+control was run in v3, on the expanded knowledge base (D-017).
 
 ---
 
@@ -500,7 +506,8 @@ Spaces expect.
 - *Plain `def` endpoints, not `async def`.* The LLM SDK calls block; FastAPI
   runs `def` endpoints in a thread pool, whereas blocking inside `async def`
   would stall the event loop for every request.
-- *One vector store for API and UI*, built once at startup (D-005).
+- *One vector store for API and UI*, loaded once at startup (built on every
+  start under D-005; loaded from the saved index since D-015).
 - *503 when every provider fails* (D-008); 400 for an unknown model; 422 from
   Pydantic for invalid input; questions capped at 500 characters to protect
   free-tier quotas on a public demo.
@@ -549,7 +556,11 @@ engine that answers badly from looking cheap.
   price answers "what would this cost on a paid plan?". A model without a
   price shows cost as unknown (`None`), never as $0.
 - *Failed attempts cost nothing but are counted*, so a run that leaned on
-  the fallback chain is visible in its usage.
+  the fallback chain is visible in its usage. In a pinned evaluation run
+  there is no fallback: a rate-limited call fails the question, and the
+  harness retries it from scratch, so the stored row shows only the
+  attempt that succeeded. Those failed calls are visible in Langfuse
+  (D-013) as generations at level ERROR.
 
 **Trade-offs accepted:** results rows are larger (one record per call).
 Runs made before this change have no usage, and the dashboard says so
@@ -567,7 +578,10 @@ each question becomes one Langfuse trace: a span for the request, a span per
 graph node, a retriever span per search (query and chunks returned) and a
 generation per LLM call with its prompt, output, model, tokens and cost.
 Traces are tagged with the engine; evaluation runs group their traces under
-a session named after the results file. Without the keys, `observability.py`
+a session named after the results file. In an evaluation run, the search
+that computes the retrieval metrics and the judge's call run outside the
+answer, so each appears as its own small trace beside the answer trace;
+the scores are attached to the answer trace. Without the keys, `observability.py`
 makes every hook a no-op and never imports Langfuse.
 
 **Why Langfuse:** an open-source, OpenTelemetry-based tracing tool built for
@@ -640,7 +654,9 @@ the condition a real deployment faces.
 **What the first build produced (October 2026):** 132 of the 133 listed
 articles (one title, "James Anderson", was a disambiguation page and is now
 "James Anderson (cricketer)"), so 149 documents and 3,077 chunks: 81 curated
-and 2,996 from Wikipedia, against 81 in v2. Two clean-ups came from reading
+and 2,996 from Wikipedia, against 81 in v2. With that article added and the
+clean-ups below, the knowledge base used by the v3 runs is 150 documents and
+3,106 chunks (81 curated, 3,025 from Wikipedia). Two clean-ups came from reading
 the output rather than trusting it:
 - *Table-only sections were dropped.* The plain-text extract leaves out
   tables, so some sections became a heading and nothing else ("**Finals.**",

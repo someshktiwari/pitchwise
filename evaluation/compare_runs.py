@@ -180,7 +180,7 @@ def build(run_paths):
     with gr.Blocks(title="Pitchwise: Linear vs Agentic") as demo:
         gr.Markdown("# 🏏 Pitchwise Evaluation: Linear vs Agentic")
         gr.Markdown(
-            "Saved runs of the same 104-question test set, each with one pinned generation model "
+            "Saved runs of one test set (compare runs of the same set only), each with one pinned generation model "
             "and the same LLM judge. Scores are 1-5. Files: "
             + ", ".join(f"`{label}` = `{p}`" for label, p in run_paths.items())
         )
