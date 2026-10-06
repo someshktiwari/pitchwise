@@ -172,9 +172,16 @@ def build_graph(vectorstore):
 
     def retrieve(state):
         # The original question always goes first, so the agentic context is a
-        # superset of what v1 would have retrieved (before the cap).
+        # superset of what v1 would have retrieved (before the cap). Rewrite
+        # queries come next, newest first, then the planner's sub-queries:
+        # a rewrite targets the fact the grader said was missing, so its
+        # chunks must survive the cap. (Appended last, they were cut once
+        # the first search filled the cap, and a rewrite added nothing: C-010.)
+        n_rewrites = state["rewrites"]
+        subs = state["sub_queries"]
+        planned, rewritten = (subs[:-n_rewrites], subs[-n_rewrites:]) if n_rewrites else (subs, [])
         queries = [state["question"]]
-        for q in state["sub_queries"]:
+        for q in list(reversed(rewritten)) + planned:
             if q not in queries:
                 queries.append(q)
         seen, merged = set(), []

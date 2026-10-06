@@ -162,7 +162,8 @@ def fingerprint(root=None):
     chunking settings (D-015). A saved index is reused only if this matches."""
     root = root or KNOWLEDGE_BASE_PATH
     h = hashlib.sha256()
-    h.update(f"{EMBEDDING_MODEL}|{CHUNKING_VERSION}|{MAX_CHUNK_CHARS}|{CHUNK_OVERLAP_CHARS}".encode())
+    h.update(f"{EMBEDDING_MODEL}|{CHUNKING_VERSION}|{MAX_CHUNK_CHARS}|{CHUNK_OVERLAP_CHARS}|"
+             f"{MIN_CHUNK_TEXT_CHARS}|{_LABEL_LINE.pattern}".encode())
     for path in knowledge_base_files(root):
         h.update(str(path.relative_to(root)).encode())
         h.update(path.read_bytes())

@@ -1,7 +1,7 @@
 [project]
 name = "pitchwise"
-version = "2.0.0"
-description = "Grounded cricket Q&A: linear and LangGraph agentic RAG engines, a FastAPI service, and a 104-question evaluation harness"
+version = "3.0.0"
+description = "Grounded cricket Q&A: linear and LangGraph agentic RAG engines, a FastAPI service, and an evaluation harness (104-question v2 set, 177-question v3 set)"
 authors = [
     { name = "Somesh Tiwari", email = "tiwari.17.somesh@gmail.com" }
 ]
@@ -27,9 +27,6 @@ dependencies = [
     "sentence-transformers>=6.0.1",
     "uvicorn>=0.30",
 ]
-
-[project.scripts]
-pitchwise = "pitchwise:main"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]

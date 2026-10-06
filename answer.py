@@ -37,6 +37,12 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
+# The last few messages of a conversation are enough to resolve follow-ups
+# ("and his average?"); sending everything would let one long chat (or one
+# API request with a huge history) consume a free-tier quota (D-011).
+MAX_HISTORY_MESSAGES = 8
+MAX_HISTORY_MESSAGE_CHARS = 2000
+
 RETRIEVER_K = 4  # chunks retrieved per question — Chroma's default, stated
                  # explicitly rather than left implicit; revisit once the
                  # evaluation harness can measure retrieval quality directly
@@ -259,6 +265,18 @@ def generate_from_context(question, context, history=None, model_label=None, all
                                   model_label=model_label, allow_fallback=allow_fallback)
 
 
+def trim_history(history):
+    """Keep only the last MAX_HISTORY_MESSAGES messages of a conversation,
+    each cut to MAX_HISTORY_MESSAGE_CHARS characters."""
+    trimmed = []
+    for turn in (history or [])[-MAX_HISTORY_MESSAGES:]:
+        content = turn["content"]
+        if isinstance(content, str):
+            content = content[:MAX_HISTORY_MESSAGE_CHARS]
+        trimmed.append({**turn, "content": content})
+    return trimmed
+
+
 def format_context(docs):
     """Join retrieved chunks into the context string the prompt expects."""
     return "\n\n".join(doc.page_content for doc in docs)
@@ -293,6 +311,7 @@ def _answer_question(vectorstore, question, history=None, model_label=None, k=No
     and token usage with list-price cost, D-012).
     """
     obs.update_span(input={"question": question, "engine": engine})
+    history = trim_history(history)
     if engine == "agentic":
         from graph import run_agentic  # imported lazily: langgraph only needed for this engine
         if k is not None:

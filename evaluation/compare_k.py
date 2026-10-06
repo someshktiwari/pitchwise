@@ -3,8 +3,8 @@ evaluation/compare_k.py
 
 Superseded for new runs by `evaluation.eval --k N --category spanning
 --pin-model` (DECISIONS.md D-017), which pins the model and records results
-in the same format as every other run. Kept because the September k
-comparison was made with it.
+in the same format as every other run. Kept for reference: the September
+k comparison it was built for was never run to completion (D-007).
 
 Tests different retriever k values (how many chunks are retrieved per
 question) against the 'spanning' category specifically — the category

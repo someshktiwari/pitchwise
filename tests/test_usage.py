@@ -142,3 +142,17 @@ def test_scores_and_trace_ids_are_no_ops_without_tracing(monkeypatch):
     assert trace["langfuse_trace_id"] is None
     obs.score(None, "accuracy", 5)        # must not raise
     obs.score("some-id", "accuracy", 5)   # tracing off: ignored
+
+
+def test_long_conversations_are_trimmed_before_generation(monkeypatch):
+    seen = {}
+
+    def provider(provider, model, system_prompt, question, history=None, temperature=None):
+        seen["history"] = history
+        return "ok", 1, 1
+
+    monkeypatch.setattr(base, "_call_provider", provider)
+    history = [{"role": "user" if i % 2 == 0 else "assistant", "content": "x" * 10_000} for i in range(40)]
+    base.answer_question(FakeStore(), "q", history=history)
+    assert len(seen["history"]) == base.MAX_HISTORY_MESSAGES
+    assert all(len(t["content"]) == base.MAX_HISTORY_MESSAGE_CHARS for t in seen["history"])

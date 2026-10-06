@@ -36,12 +36,14 @@ MAX_QUESTION_CHARS = 500  # protects free-tier API quotas on a public demo
 
 class Turn(BaseModel):
     role: Literal["user", "assistant"]
-    content: str
+    content: str = Field(max_length=4000)
 
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=MAX_QUESTION_CHARS)
-    history: list[Turn] = Field(default_factory=list)
+    # Only the last few messages are used (answer.trim_history); this rejects
+    # payloads that are oversized on purpose.
+    history: list[Turn] = Field(default_factory=list, max_length=50)
     engine: Literal["linear", "agentic"] = "linear"
     model_label: Optional[str] = None
 
@@ -68,7 +70,7 @@ api = FastAPI(
     lifespan=lifespan,
     title="Pitchwise API",
     description="Grounded cricket Q&A with a linear RAG engine and a LangGraph agentic engine.",
-    version="2.0.0",
+    version="3.0.0",
 )
 
 

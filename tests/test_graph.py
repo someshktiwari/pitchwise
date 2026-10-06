@@ -212,3 +212,21 @@ def test_13_pinned_run_pins_routing_calls_too(monkeypatch):
     _, _, trace = g.run_agentic(FakeStore(), "q", model_label="X", allow_fallback=False)
     assert seen == [("X", False)] * 3          # plan, grade, generate: all pinned to X
     assert trace["routing_models"] == ["pinned-model"]
+
+
+def test_14_rewrite_results_survive_the_chunk_cap(llm):
+    """C-010: when the first search already fills the 10-chunk cap, the
+    rewrite query's chunks must still reach the grader and the answer."""
+    script, calls = llm
+    four = lambda name: [doc(f"{name}{i}") for i in range(4)]
+    store = FakeStore(by_query={"q": four("orig"), "a": four("a"), "b": four("b"),
+                                "fact query": [doc("needed")]})
+    script[g.PLAN_PROMPT] = [plan_json("multi", ["a", "b"])]
+    script[g.GRADE_PROMPT] = [grade_json(False, "the fact"), grade_json(True)]
+    script[g.REWRITE_PROMPT] = ["fact query"]
+    _, docs, trace = run(store, "q")
+    names = [d.metadata["header_1"] for d in docs]
+    assert len(docs) == g.MAX_CHUNKS
+    assert "needed" in names                                # the rewrite's chunk made it in
+    assert names[:4] == ["orig0", "orig1", "orig2", "orig3"]  # original question still first
+    assert trace["steps"][-2:] == ["grade:ok", "generate"]

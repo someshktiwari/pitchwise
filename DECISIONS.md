@@ -13,6 +13,7 @@ D-001 through D-008 — ingestion and generation pipeline decisions.
 D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 D-012 through D-013 — v3: token and cost accounting, request tracing.
 D-014 through D-017 — v3: knowledge base expansion, saved index, evaluation model choice, k=8 control.
+D-018 — measurement limits kept fixed for the v3 runs, and what changes after them.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -510,7 +511,11 @@ Spaces expect.
   start under D-005; loaded from the saved index since D-015).
 - *503 when every provider fails* (D-008); 400 for an unknown model; 422 from
   Pydantic for invalid input; questions capped at 500 characters to protect
-  free-tier quotas on a public demo.
+  free-tier quotas on a public demo. *(October 2026: the question cap could
+  be bypassed through the conversation history, which had no limit. The
+  API now rejects more than 50 history messages or a message over 4,000
+  characters, and both engines send only the last 8 messages, each cut to
+  2,000 characters, to the model, which covers the chat UI too.)*
 - *Keys only at run time* (`--env-file` / Space secrets), never in the image.
 - *The embedding model is baked into the image* so a cold start doesn't
   download it.
@@ -719,6 +724,11 @@ the exact files and settings it was built from. Hashing the content means
 an edit anywhere in the knowledge base, a new embedding model or a changed
 chunk size forces a rebuild, and nothing else does.
 
+*(October 2026: the fingerprint first covered the chunk size and overlap but
+not the minimum-text filter, so changing that filter changed the index
+without changing its fingerprint, and a stale saved index would have been
+reused. The fingerprint now includes every chunking setting.)*
+
 **Why a folder per fingerprint:** Chroma keeps one client open per folder
 inside a process. Rebuilding in place would delete files an open client
 still uses. Building into a new folder and removing the old ones afterwards
@@ -799,6 +809,46 @@ of the tokens of the v3 linear run.
 sweep; k=6 is not tested. The comparison with the k=4 linear run is across
 two runs, which carry run-to-run variance (v2's two agentic runs differed by
 up to 0.14 per category).
+
+---
+
+## D-018 · Measurement Limits Kept Fixed for the v3 Runs
+
+**Date:** October 2026
+
+**Decision:** three weaknesses in how runs are measured were found by a
+code review while the v3 runs were in progress. They are left unchanged
+until every v3 run is finished, because changing them mid-way would make
+the v3 linear run, which is already complete, not comparable with the
+agentic runs. They are fixed together afterwards.
+
+1. **Answers are generated at the provider's default temperature.** The
+   answer call sends no temperature, so Groq uses its default (1.0), while
+   the plan, grade and rewrite calls run at 0 (D-009) and the judge runs at
+   0. Every v2 and v3 run shares this, so comparisons are like with like,
+   but each answer carries sampling noise. This is part of why each
+   agentic configuration is run twice. *After v3:* evaluation runs generate
+   at temperature 0.
+2. **Keyword matching is by substring, not whole word.** The retrieval
+   metrics (MRR, nDCG, keyword coverage) count a keyword as found inside
+   any longer word: "red" appears in 1,550 chunks as a substring ("scored",
+   "retired") and in 22 as a word; "199" matches "1999". In the v3 test set,
+   79 of the 162 answerable questions have a keyword that also matches
+   inside other words; for 7 the effect is large (the ball-colour, Ashes
+   urn, team-size and boundary-six questions, among others). This inflates
+   the retrieval metrics for those questions only. The judge's scores,
+   which are the headline results, do not use keywords. *After v3:* match
+   whole words, make generic keywords specific, and recompute the
+   retrieval metrics of every saved run, which needs no LLM calls.
+3. **nDCG is computed against the retrieved list only.** Its ideal ranking
+   is built from the chunks that were retrieved, so it measures whether the
+   relevant chunks found are ranked first, not whether relevant chunks were
+   missed. Keyword coverage measures that. *After v3:* document the
+   distinction in the evaluation notes rather than change the metric.
+
+**Why wait:** the v3 linear run is complete and the agentic runs started
+on the same code. Fixing any of these now would change two things between
+the runs being compared.
 
 ---
 
@@ -1112,6 +1162,36 @@ claim that a larger knowledge base contradicts).
 *not* contain something, which is harder to verify than a keyword check.
 Absence was checked with narrow search patterns; the model and the judge
 together caught what the patterns missed.
+
+## C-010 · A Query Rewrite Added Nothing Once the First Search Filled the Cap
+
+**What D-009 said:** when the grader names a missing fact, the engine writes
+a new search query for it and retrieves again.
+
+**What the code did:** `retrieve` searched the original question, then the
+planner's sub-queries, then the rewrite queries, and kept the first 10
+unique chunks. The original question and two sub-queries return up to 12
+chunks, so whenever they already filled the cap, the rewrite query's
+chunks were cut and the grader saw the same 10 chunks again. Each such
+rewrite cost two LLM calls (rewrite and grade) and changed nothing. Found
+in a code review and reproduced with the real graph and a scripted store:
+two rewrites, `retrieve:3q/10chunks`, `4q/10chunks`, `5q/10chunks`, and none
+of the rewrite queries' chunks in the final context. Where the first search
+returned fewer than 10 unique chunks, as in C-004's trace (7 chunks), the
+rewrites did add chunks, which is why the bug did not show in that example.
+
+**Fix:** rewrite queries are searched right after the original question,
+newest first, before the planner's sub-queries. The original question's
+chunks still come first, so the agentic context still contains everything
+the linear engine would retrieve; the planner's sub-queries take the
+remaining places. `tests/test_graph.py` test 14 fills the cap on the first
+search and checks the rewrite's chunk reaches the answer; it fails against
+the old code.
+
+**Effect on published results:** v2's agentic runs used rewrites on 2 of
+104 questions each, so the v2 numbers barely touch this path and are left
+as they are. The v3 agentic runs restart with the fix, so they measure the
+engine as designed; the v3 linear run makes no rewrites and is unaffected.
 
 ---
 *Author: Somesh Kant Tiwari*

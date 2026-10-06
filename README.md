@@ -89,7 +89,7 @@ graph TD;
 | Node | LLM call | What it does |
 |---|---|---|
 | `plan` | 1 | Classifies the question as simple or multi; splits multi questions into 2–3 standalone sub-queries |
-| `retrieve` | 0 | Retrieves for the original question first, then each sub-query; removes duplicate chunks; caps at 10 |
+| `retrieve` | 0 | Retrieves for the original question first, then any rewrite queries (newest first), then each sub-query; removes duplicate chunks; caps at 10 |
 | `grade` | 1 | Checks whether the merged context contains every fact the question needs, and names the missing one |
 | `rewrite` | 1 | Writes a new search query aimed at the missing fact (at most 2 rewrites) |
 | `generate` | 1 | The v1 grounded prompt, unchanged |
