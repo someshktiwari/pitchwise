@@ -655,8 +655,8 @@ the output rather than trusting it:
   was removed.
 
 **The v3 test set** (`evaluation/tests_v3.jsonl`, 177 questions, built and
-checked by `evaluation/build_tests_v3.py`): 113 direct_fact, 32 spanning,
-16 temporal and 16 out_of_scope. It keeps the v2 questions except where the
+checked by `evaluation/build_tests_v3.py`): 114 direct_fact, 32 spanning,
+16 temporal and 15 out_of_scope (after C-009). It keeps the v2 questions except where the
 new knowledge base changed the right answer: seven out-of-scope questions
 became answerable and were relabelled or reworded, one was dropped (the
 "fastest T20I century", where the only claim in the knowledge base is a 2017
@@ -1065,6 +1065,37 @@ what every v1 and v2 run reported.
 **Fix:** the v3 set drops the unmatched form. The v2 set is left as it was
 so the v2 results stay reproducible; the effect on v2's averages is one
 question's retrieval coverage, not any answer score.
+
+## C-009 · Two v3 Test Questions Were Wrong, Found by the First v3 Run
+
+**What was found:** reading the v3 linear run question by question, not
+just its averages, showed two failures that were the test set's fault:
+- *Q95, "What is Rohit Sharma's career Test batting average?"*, was kept as
+  out of scope, but Rohit Sharma's article says he "finished his Test career
+  having played 67 Tests and making 4,301 runs at 40.57". The model answered
+  40.57, correctly from the context, and the judge scored it 1 because the
+  label said it should decline. The search used to re-check the v2
+  out-of-scope questions had looked for "Rohit" within 60 characters of
+  "average" and missed this sentence.
+- *Q122, "Who was the first player to score a double century in ODI
+  cricket?"*, has two answers in the knowledge base: Belinda Clark's
+  article (1997, correct) and the curated Sachin Tendulkar document ("the
+  first player to score a double century in ODI cricket", 2010, true only
+  of men's ODIs). The model answered Tendulkar.
+
+**Fix:** Q95 is now a direct_fact question with the answer from the
+article; Q122 asks for the first woman to score an ODI double century. Both
+were fixed before the agentic runs started, and the two questions were
+re-run in the linear run, so every v3 run uses the same test set. The
+curated Tendulkar sentence is left unchanged until the v3 runs finish, so
+the knowledge base stays identical across them; it is a known inaccuracy
+to correct afterwards (a second instance of the C-007 pattern: a curated
+claim that a larger knowledge base contradicts).
+
+**Lesson:** an out-of-scope label is a claim that the knowledge base does
+*not* contain something, which is harder to verify than a keyword check.
+Absence was checked with narrow search patterns; the model and the judge
+together caught what the patterns missed.
 
 ---
 *Author: Somesh Kant Tiwari*

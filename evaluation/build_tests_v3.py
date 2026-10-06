@@ -58,6 +58,11 @@ changes = {
     102: q(None, ["Muralitharan", "800"],
            "Muttiah Muralitharan took 800 Test wickets, the only bowler to reach 800.",
            "direct_fact", "wikipedia/players/muttiah-muralitharan.md"),
+    # C-009: answerable after all; found by the v3 linear run, where the model
+    # answered 40.57 correctly from the context and the old label scored it 1
+    95: q(None, ["Rohit", "4,301", "40.57"],
+          "Rohit Sharma finished his Test career with 4,301 runs in 67 Tests at an average of 40.57.",
+          "direct_fact", "wikipedia/players/rohit-sharma.md"),
     104: q(None, ["Mohammad Ashraful", "youngest"],
            "Mohammad Ashraful of Bangladesh became the youngest player to score a Test century, doing so in his first match.",
            "direct_fact", "wikipedia/teams/bangladesh-national-cricket-team.md"),
@@ -109,7 +114,10 @@ new = [
     q("What nicknames is Rahul Dravid known by?", ["Dravid", "The Wall", "Mr. Dependable"], "Rahul Dravid is known as 'The Wall' and 'Mr. Dependable'.", "direct_fact", W+"players/rahul-dravid.md"),
     q("What is Ricky Ponting's record as an international captain?", ["Ponting", "220", "324"], "Ricky Ponting is the most successful captain in international cricket, with 220 wins in 324 matches (67.91%).", "direct_fact", W+"players/ricky-ponting.md"),
     q("Which World Cup did Allan Border win as Australia's captain?", ["Border", "1987"], "Allan Border led Australia to victory in the 1987 Cricket World Cup, Australia's first world title.", "direct_fact", W+"players/allan-border.md"),
-    q("Who was the first player to score a double century in ODI cricket?", ["Belinda Clark", "double century"], "Belinda Clark of Australia was the first player to record a double century in ODIs.", "direct_fact", W+"players/belinda-clark.md"),
+    # C-009: was "the first player to score a double century in ODI cricket?", which the
+    # knowledge base answers two ways (Belinda Clark in 1997; the curated Tendulkar
+    # document says Sachin, true only of men's ODIs)
+    q("Who was the first woman to score a double century in a One Day International?", ["Belinda Clark", "double century"], "Belinda Clark of Australia, the first player to record a double century in the ODI format.", "direct_fact", W+"players/belinda-clark.md"),
     q("How many ODI wickets did Jhulan Goswami take?", ["Goswami", "255"], "Jhulan Goswami took 255 wickets in 204 ODIs, the most in women's ODI cricket.", "direct_fact", W+"players/jhulan-goswami.md"),
     q("Who captained England when they won the first Women's Cricket World Cup?", ["Heyhoe Flint", "1973"], "Rachael Heyhoe Flint captained England to victory in the inaugural 1973 Women's Cricket World Cup.", "direct_fact", W+"players/rachael-heyhoe-flint.md"),
     q("What made Ellyse Perry's international debut unusual?", ["Perry", "16", "FIFA"], "Ellyse Perry debuted for both Australia's national cricket and soccer teams at 16, and was the first Australian to play in both ICC and FIFA World Cups.", "direct_fact", W+"players/ellyse-perry.md"),
