@@ -281,12 +281,18 @@ finished product. Concrete next steps, in rough priority order:
   at temperature 0, match keywords as whole words and recompute every saved
   run's retrieval metrics, and score the fixed refusal sentence on an
   answerable question as wrong by rule instead of leaving it to the judge.
+- **Hybrid search, then a reranker if needed** — the v3 runs call for it.
+  Ambrose's "405 Test wickets" sits in the first paragraph of his article,
+  yet no search retrieved it, not even the agent's "Curtly Ambrose Test
+  wickets"; and Kohli's highest Test score went from answered in v2 to
+  missed in v3 as near-duplicate chunks crowded the top 4. Exact names and
+  numbers are what keyword search (BM25) matches well and embeddings blur.
+  Add BM25 beside the vector search, measured against the v3 runs on the
+  questions every run failed and on the full set, after the measurement
+  fixes above so the comparison is clean; try a cross-encoder reranker only
+  if BM25 is not enough.
 - **Detect contradictions automatically** — C-007 was found by reading:
   check the knowledge base for conflicting claims about the same subject.
-- **Hybrid search or a reranker, only if the v3 runs call for it** — if the
-  bigger index measurably hurts retrieval, BM25 alongside vector search or a
-  cross-encoder reranker is the next step; adding either before the v3
-  results would blur the comparison D-016 protects.
 - **Optional: a live deployment** — the service is containerised
   (`Dockerfile`) with the index built into the image (D-015), so a Hugging
   Face Docker Space would need only its configuration and API keys as
