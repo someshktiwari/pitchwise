@@ -22,8 +22,9 @@ This engine adds three steps around the unchanged v1 retrieval and prompt:
 
 - plan:     one LLM call. Classifies the question as simple or multi and,
             for multi, splits it into 2-3 standalone sub-queries.
-- retrieve: no LLM. Retrieves for the original question first, then for each
-            sub-query; merges, removes duplicate chunks, caps the total.
+- retrieve: no LLM. Retrieves for the original question first, then for any
+            rewrite queries (newest first, C-010), then for each sub-query;
+            merges, removes duplicate chunks, caps the total.
 - grade:    one LLM call over all chunks: is the context sufficient for the
             original question, and if not, which fact is missing?
 - rewrite:  one LLM call: a new search query aimed at the missing fact.

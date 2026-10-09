@@ -6,10 +6,13 @@ Side-by-side dashboard of saved evaluation runs (DECISIONS.md D-010).
 evaluator.py re-runs the evaluation live (104 questions of LLM calls) and
 only for the linear engine. This dashboard reads the results files that
 evaluation/eval.py already wrote, so it makes no LLM calls and can compare
-any runs: v1 linear against one or more v2 agentic runs.
+any runs of the same test set: the v2 runs (the default) or the v3 runs.
 
 Run:  uv run python -m evaluation.compare_runs
       uv run python -m evaluation.compare_runs L1=evaluation/results_linear_oct.jsonl A1=evaluation/results_agentic_r1.jsonl
+      uv run python -m evaluation.compare_runs L=evaluation/results_v3_linear.jsonl \
+          K8=evaluation/results_v3_linear_k8_spanning.jsonl \
+          A1=evaluation/results_v3_agentic_r1.jsonl A2=evaluation/results_v3_agentic_r2.jsonl
 
 Each argument is LABEL=path. With no arguments, the default runs below are
 used if their files exist.

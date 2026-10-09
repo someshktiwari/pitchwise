@@ -772,6 +772,13 @@ day instead of falling back to another model.
   by model alone, so adding OpenRouter's price for qwen3.8-27b silently
   replaced Groq's; a test caught it before any run.
 
+**Status (October 2026):** done. All four v3 runs (linear, the k=8 control
+and two agentic) finished by October 9 on Groq's free tier, every row
+answered by qwen3.8-27b. Their result rows record about 0.76 million
+answering tokens and 0.23 million judge tokens, less than the estimate
+above; rows count successful calls only, so rate-limited retries are not
+included.
+
 **Trade-off accepted:** results arrive in about a week rather than a day,
 and the shared daily limit means the app should be tried on a different
 model (each Groq model has its own free allowance) while the runs are in

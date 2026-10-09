@@ -10,7 +10,7 @@ This module implements the decisions recorded in DECISIONS.md:
   - D-002: all-MiniLM-L6-v2 (local, free, no API dependency)
 
   - D-014: the knowledge base has two parts: 17 curated documents and
-    about 130 Wikipedia articles built by scripts/build_kb.py
+    133 Wikipedia articles built by scripts/build_kb.py
   - D-015: the built index is saved to disk with a fingerprint of everything
     that shapes it, and reused until the knowledge base, the chunking or the
     embedding model changes (replaces D-005's rebuild-on-every-start)

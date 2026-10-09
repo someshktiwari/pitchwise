@@ -2,7 +2,8 @@
 
 A Retrieval-Augmented Generation (RAG) assistant that answers cricket
 questions — players, formats, tournaments, and the laws of the game —
-grounded strictly in a curated knowledge base, not general model knowledge.
+grounded strictly in its own knowledge base (17 hand-written documents and
+133 Wikipedia articles), not general model knowledge.
 
 Built end-to-end: document ingestion, chunking, embeddings, vector search,
 multi-provider LLM generation with automatic fallback, a LangGraph agentic
@@ -31,7 +32,7 @@ verified with real data. Details in [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 ## Architecture
 
 ```
-knowledge-base/          17 curated documents + about 130 Wikipedia articles (about 3,100 chunks)
+knowledge-base/          17 curated documents + 133 Wikipedia articles (3,106 chunks)
        │
        ▼
    ingest.py              chunk (header-aware) → embed (local, free) → vector store

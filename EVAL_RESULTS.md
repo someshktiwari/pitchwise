@@ -8,7 +8,9 @@ full reasoning behind every decision referenced here, see
 
 ## How this RAG pipeline was validated, and how it improved
 
-Two rounds of validation happened, at two different points in the build,
+The sections below follow the project's versions: v1 (this section and the
+next two), v2 (the agentic engine) and v3 (a 150-document knowledge base,
+with cost). In v1, two rounds of validation happened, at two different points in the build,
 using two different levels of rigor — worth being upfront about that rather
 than implying uniform treatment throughout.
 
