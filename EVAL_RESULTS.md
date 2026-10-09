@@ -393,6 +393,12 @@ metrics, broken down by category:
 
 ![v3 runs: answer accuracy by category](./screenshots/v3-comparison.png)
 
+**One agentic answer in Langfuse** (v3) — the graph's path for one question, with the grade → rewrite → retrieve loop taken once:
+
+![The agentic graph as traced in Langfuse](./screenshots/langfuse-graph.png)
+
+![The same trace on a timeline, with the judge's scores](./screenshots/langfuse-trace.png)
+
 **Linear vs agentic** (`evaluation/compare_runs.py`, v2) — the saved runs side by side:
 
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)

@@ -151,6 +151,16 @@ question also produces two smaller traces: the retrieval-metrics search and
 the judge's call.) Without keys,
 tracing is off and nothing else changes.
 
+![One agentic answer traced in Langfuse: each graph step with its time and cost, and the judge's scores](./screenshots/langfuse-trace.png)
+
+*One question from the second v3 agentic run ("Who captained India and who
+was head coach when they won the 2024 T20 World Cup?"): plan, three
+searches, a grade that found a fact missing, one rewrite, four searches, a
+second grade that found the context sufficient, and the answer. 38 s and
+$0.0044 at list price, most of it the two grades and the answer; the
+searches take milliseconds. On the right, the judge's scores attached to
+the trace. The time includes free-tier rate-limit waits.*
+
 ---
 
 ## Evaluation
