@@ -132,9 +132,9 @@ baseline in **both** agentic runs, `direct_fact` not below 4.9, at most one
 `out_of_scope` failure per run, and `temporal` within 0.3 of the baseline.
 Both runs pass.
 
-**Not measured:** a k=8 linear control was planned
+**Not measured in v2:** a k=8 linear control was planned
 ([`DECISIONS.md` D-009](./DECISIONS.md)) but not run, so these results show
-the agentic engine against the default k=4 only.
+the agentic engine against the default k=4 only. It was run in v3, below.
 
 ### Where the spanning gain came from
 
@@ -203,6 +203,158 @@ uv run python -m evaluation.eval --engine agentic --pin-model --results evaluati
 uv run python -m evaluation.eval --engine agentic --pin-model --results evaluation/results_agentic_r2.jsonl
 uv run python -m evaluation.mechanism            # final-context coverage for Q66, Q67, Q76, Q79
 uv run python -m evaluation.compare_runs         # dashboard comparing the saved runs, no LLM calls
+```
+
+---
+
+## v3: a 150-document knowledge base, with cost (October 2026)
+
+v3 grew the knowledge base from 17 documents (81 chunks) to 150 documents
+(3,106 chunks) by adding 133 Wikipedia articles
+([`DECISIONS.md` D-014](./DECISIONS.md)), and measured both engines on a new
+177-question test set: 89 questions carried over unchanged from v2 and 88 new
+or re-labelled ones. Every LLM call now records its tokens and list-price
+cost (D-012), and every answer is traced in Langfuse (D-013).
+
+Four runs, all with the same pinned answer model (qwen3.8-27b on Groq's
+free tier, D-016) and the same judge (Gemini 3.5 Flash Lite):
+
+- **L**: linear engine, k=4 (the v1 pipeline)
+- **K8**: linear engine, k=8, on the 32 `spanning` questions only (the
+  control D-009 planned and D-017 ran)
+- **A1, A2**: agentic engine, two independent runs. A1's five questions
+  that used a rewrite were re-run after the rewrite-loop fix
+  ([`DECISIONS.md` C-010](./DECISIONS.md)); their scores did not change.
+
+**One correction to the judge's scores.** The judge gave 5 out of 5 to five
+answers that were the fixed refusal sentence on a question the knowledge
+base does answer (2 in L, 3 in A2; for example, the first Women's World Cup
+captain, Rachael Heyhoe Flint, is in the knowledge base). The same refusal
+to the same question was scored 1 in another run. These five are counted as
+wrong (accuracy 1) in every table below, and the as-judged figure is given
+beside it where it differs ([`DECISIONS.md` C-011](./DECISIONS.md)). The
+results files keep the judge's original scores.
+
+### Answer accuracy by category (1-5)
+
+| Category | n | L (k=4) | K8 (k=8) | A1 agentic | A2 agentic |
+|---|---|---|---|---|---|
+| `direct_fact` | 114 | 4.62 (as judged 4.66) | – | 4.73 | 4.69 (4.76) |
+| `spanning` | 32 | 3.62 | 4.31 | **4.44** | **4.50** (4.62) |
+| `temporal` | 16 | 4.75 (5.00) | – | 4.62 | 4.88 |
+| `out_of_scope` | 15 | 5.00 | – | 5.00 | 5.00 |
+| Overall | 177 | 4.49 (4.53) | – | 4.69 | 4.70 (4.77) |
+
+With the correction, the two agentic runs agree to within 0.06 in every
+category and 0.01 overall.
+
+### What scale did
+
+**It did not hurt the questions v2 already answered.** On the 89 questions
+carried over unchanged, the linear engine scored 4.82 in v2 and 4.82 in v3.
+The lower v3 average comes from the new questions, which ask about the
+Wikipedia content: linear scored 4.15 on them with 19 failures, the agent
+4.49 with 11 in both runs. Most of those failures (15 of 19 for linear,
+9 of 11 for the agent) are refusals where retrieval missed the fact.
+
+Single questions did get harder. "What is Virat Kohli's highest Test
+score?" scored 5 in v2 and 1 in every v3 run: its keyword coverage fell from
+100% to 33% once near-duplicate Wikipedia chunks competed for the top 4
+places.
+
+### Does the agent beat simply retrieving more?
+
+D-009 named raising k as the cheapest alternative to the agent; v2 never ran
+it. On the 32 `spanning` questions:
+
+| | L (k=4) | K8 (k=8) | A1 | A2 |
+|---|---|---|---|---|
+| Accuracy | 3.62 | 4.31 | 4.44 | 4.50 |
+| Correct answers (score 4 or 5) | 21 | 26 | 27 | 28 |
+| Tokens per question | 755 | 1,395 | 3,277 | 3,265 |
+| LLM calls per question | 1 | 1 | 3.4 | 3.4 |
+| List-price cost per 1,000 correct answers | $1.13 | $1.65 | $3.52 | $3.43 |
+
+**Raising k recovers most of the gain.** k=8 lifts `spanning` from 3.62 to
+4.31 at 1.8 times the tokens of k=4. **The agent is ahead of k=8 in both
+runs**, by 0.13 and 0.19 (one or two more correct answers out of 32), at
+about 2.3 times k=8's tokens, so each correct compound answer costs about
+twice as much. The two approaches fix different questions: k=8 fixed the
+Ashes vs World Test Championship question, which the agent answered only
+partly in A1; the agent fixed the Kumble vs Muralitharan and Big Bash vs
+SA20 comparisons, which k=8 still missed.
+
+The verdict: on this knowledge base, the agent's gain over simply
+retrieving more is small and consistent, and it costs about twice as much
+per correct compound answer. Raising k is the better first step; the agent
+earns its place where compound questions matter more than cost. k=8 was run
+once, so its 4.31 carries run-to-run variance of its own.
+
+### What it costs
+
+| | Linear (k=4) | Agentic (A1 / A2) |
+|---|---|---|
+| Tokens per question | 743 | 1,662 / 1,660 |
+| LLM calls per question | 1 | 2.32 |
+| List-price cost per 1,000 questions | $0.70 | $1.54 / $1.54 |
+| Per month at 10,000 questions a day | about $211 | about $462 |
+| Correct answers (of 177) | 154 | 162 / 163 |
+| Cost per 1,000 correct answers | $0.81 | $1.68 / $1.68 |
+
+Pitchwise runs on free tiers, so these are list prices, not money spent
+(D-012). The judge's cost, about $0.25 per 1,000 questions, is recorded
+separately and is not included above.
+
+**Where the agent's tokens go:** generate 58%, grade 22%, plan 19%, rewrite
+under 1%. Simple questions (138 of 177) take two calls, plan and generate;
+the 39 routed as `multi` add a grade. About 80% of the linear engine's cost
+is input tokens: the retrieved context is about 20 times longer than the
+answer.
+
+### Where run-to-run variation came from
+
+A1 and A2 made the same plan, sub-queries and rewrites on 175 of 177
+questions: the routing calls run at temperature 0. As judged, their scores
+differed on 4 questions, all with identical routing. Two were the judge:
+the same refusal scored 1 in one run and 5 in the other (C-011). Two were
+the answer step, which samples at the provider's default temperature
+([`DECISIONS.md` D-018](./DECISIONS.md)): "Is Garfield Sobers still alive?"
+was refused in A1 and answered correctly in A2, and the Ashes vs World Test
+Championship answer was rated partial in A1 and full in A2.
+
+### Remaining failures, reported as found
+
+- **Failed in every v3 run:** four `spanning` questions (the 7,000-run and
+  200-wicket players, Ambrose vs Walsh wickets, the three highest
+  century-makers, the Ashraful and Muralitharan records) and eight
+  `direct_fact` questions (including Kohli's highest Test score, the
+  youngest Test centurion, Ambrose's wicket tally and the first Women's
+  World Cup captain).
+- **A retrieval failure at scale:** Ambrose's "405 Test wickets" is in the
+  first paragraph of his article, yet neither the linear search nor the
+  agent's targeted sub-queries ("Curtly Ambrose Test wickets") retrieved
+  it. This is the case for hybrid search or a reranker, the next step in the
+  README.
+- **The grader is stricter than the judge:** on two questions the grader
+  reported a missing fact twice, the engine spent four extra calls on
+  rewrites, and the answer still scored 5.
+- **"Who captains India in Test cricket as of 2026?"** The linear engine
+  refused (wrongly; counted as 1 after C-011); both agentic runs answered
+  with the captaincy mixed up with vice-captain details and scored 3.
+
+### Reproduce
+
+```bash
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model \
+    --results evaluation/results_v3_linear.jsonl
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model --k 8 \
+    --category spanning --results evaluation/results_v3_linear_k8_spanning.jsonl
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
+    --results evaluation/results_v3_agentic_r1.jsonl
+uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
+    --results evaluation/results_v3_agentic_r2.jsonl
+uv run python -m evaluation.compare_runs L=evaluation/results_v3_linear.jsonl \
+    A1=evaluation/results_v3_agentic_r1.jsonl A2=evaluation/results_v3_agentic_r2.jsonl
 ```
 
 ---

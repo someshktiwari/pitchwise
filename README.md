@@ -111,8 +111,15 @@ agentic runs, while `direct_fact` stayed at 5.0/5. Of the 4 linear failures
 it fixed, 3 came from retrieval (final-context keyword coverage 0-50% to
 100%); the 4th was model variance. It averages 2.2 LLM calls per question
 against 1 for linear. A k=8 linear control was planned but not run in v2, so
-this comparison is against the default k=4; it was run in v3 (D-017). Full
-table, failures and method:
+this comparison is against the default k=4.
+
+**Measured again at scale (v3):** on a 150-document knowledge base and a new
+177-question test set, the k=8 control ran too. On compound questions,
+retrieving 8 chunks instead of 4 lifts accuracy from 3.62 to 4.31; the agent
+scored 4.44 and 4.50 in its two runs. It beats more retrieval, but only by
+one or two correct answers out of 32, at about twice the cost per correct
+compound answer. Overall: linear 4.49, agent 4.69 and 4.70, at $0.70 vs
+$1.54 per 1,000 questions at list price. Full table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
@@ -155,7 +162,9 @@ quality independently.
 The headline result: a real hallucination gap was found through targeted
 testing (`out_of_scope` accuracy: **3.3/5**), fixed with a rewritten system
 prompt, and the fix was verified **twice, independently** (**5.0/5 in both
-runs**).
+runs**). In v3, with 150 documents, `out_of_scope` stayed at 5.0/5 in all
+three full runs, on harder questions that name a subject the knowledge base
+mentions but ask for a fact it lacks.
 
 ![Pitchwise evaluation dashboard](./screenshots/evaluation-dashboard.png)
 
@@ -256,11 +265,10 @@ existing for show.
 Pitchwise is presented here as a working, evaluated project — not a
 finished product. Concrete next steps, in rough priority order:
 
-- **Re-baseline on the v3 knowledge base** — run both engines on the
-  177-question v3 test set against the expanded knowledge base (D-014),
-  with token and cost accounting on (D-012), plus the k=8 linear control
-  on the `spanning` questions (D-017), and report what scale did to
-  retrieval, grounding and cost.
+- **Tighten the measurement (D-018, C-011)** — generate evaluation answers
+  at temperature 0, match keywords as whole words and recompute every saved
+  run's retrieval metrics, and score the fixed refusal sentence on an
+  answerable question as wrong by rule instead of leaving it to the judge.
 - **Detect contradictions automatically** — C-007 was found by reading:
   check the knowledge base for conflicting claims about the same subject.
 - **Hybrid search or a reranker, only if the v3 runs call for it** — if the
