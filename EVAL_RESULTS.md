@@ -248,6 +248,14 @@ results files keep the judge's original scores.
 With the correction, the two agentic runs agree to within 0.06 in every
 category and 0.01 overall.
 
+![v3 runs: answer accuracy by category](./screenshots/v3-comparison.png)
+
+*From `evaluation/compare_runs.py` (no LLM calls). The dashboard shows the
+judge's scores as recorded in the results files, so it reads 4.6 for A2 on
+`spanning` and 5.0 for L on `temporal`; the table above counts the five
+wrong refusals of C-011 as wrong. Its latency column includes free-tier
+rate-limit waits and is not a result.*
+
 ### What scale did
 
 **It did not hurt the questions v2 already answered.** On the 89 questions
@@ -304,6 +312,12 @@ once, so its 4.31 carries run-to-run variance of its own.
 Pitchwise runs on free tiers, so these are list prices, not money spent
 (D-012). The judge's cost, about $0.25 per 1,000 questions, is recorded
 separately and is not included above.
+
+![v3 runs: tokens and list-price cost by run and category, and by agentic step](./screenshots/v3-cost.png)
+
+*Per-category tokens and cost, and where the agent's tokens go by step,
+from the same dashboard. "Cost / correct answer" there uses the judge's
+recorded scores.*
 
 **Where the agent's tokens go:** generate 58%, grade 22%, plan 19%, rewrite
 under 1%. Simple questions (138 of 177) take two calls, plan and generate;
@@ -374,6 +388,10 @@ metrics, broken down by category:
 **Agentic engine** (`app.py`, v2) — an answer with its sub-queries and trace:
 
 ![Agentic engine answering a comparison question](./screenshots/agentic-demo.png)
+
+**v3 runs** (`evaluation/compare_runs.py`, v3) — linear, the k=8 control and both agentic runs on the 177-question set:
+
+![v3 runs: answer accuracy by category](./screenshots/v3-comparison.png)
 
 **Linear vs agentic** (`evaluation/compare_runs.py`, v2) — the saved runs side by side:
 

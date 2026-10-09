@@ -122,6 +122,8 @@ compound answer. Overall: linear 4.49, agent 4.69 and 4.70, at $0.70 vs
 $1.54 per 1,000 questions at list price. Full table, failures and method:
 [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
 
+![v3 runs: answer accuracy by category](./screenshots/v3-comparison.png)
+
 ![Linear vs agentic accuracy by category](./screenshots/linear-vs-agentic.png)
 
 ---
