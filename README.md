@@ -166,11 +166,11 @@ the trace. The time includes free-tier rate-limit waits.*
 
 ## Evaluation
 
-A test set across four categories (104 questions in v2, frozen; 177 in v3
-for the expanded knowledge base) (direct facts, multi-fact
-compound questions, temporal/recency questions, and out-of-scope questions
-designed to test grounding) — each scored on retrieval quality and answer
-quality independently.
+Test sets across four categories: direct facts, multi-fact compound
+questions, temporal/recency questions, and out-of-scope questions designed
+to test grounding. The v2 set has 104 questions and is frozen; the v3 set
+has 177 for the expanded knowledge base. Each question is scored on
+retrieval quality and answer quality independently.
 
 The headline result: a real hallucination gap was found through targeted
 testing (`out_of_scope` accuracy: **3.3/5**), fixed with a rewritten system
@@ -206,9 +206,9 @@ uv run python -m evaluation.mechanism         # keyword coverage of the agentic 
 uv run python scripts/build_kb.py             # fetch the Wikipedia part of the knowledge base (needs internet)
 uv run python -m evaluation.build_tests_v3    # rebuild the v3 test set and check every keyword
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agentic --pin-model \
-    --results evaluation/results_v3_agentic_r1.jsonl   # a v3 run on the default model (D-016)
+    --results evaluation/results_v3_agentic_new.jsonl  # a new v3 run on the default model (D-016)
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model --k 8 \
-    --category spanning --results evaluation/results_v3_linear_k8_spanning.jsonl  # k=8 control (D-017)
+    --category spanning --results evaluation/results_v3_k8_new.jsonl  # a new k=8 control run (D-017)
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
 ```
 
@@ -245,6 +245,8 @@ pitchwise/
 ├── app.py                   Gradio chat interface
 ├── smoke.py                 live check of both engines on 10 questions
 ├── tests/                   offline tests with scripted fake LLMs and providers
+├── notebooks/               early exploration of ingestion and answering (v1)
+├── src/pitchwise/           empty package stub that uv's build backend needs
 ├── Dockerfile               container for the API + UI
 ├── evaluator.py              visual evaluation dashboard
 ├── knowledge-base/           curated documents, plus wikipedia/ built by scripts/build_kb.py

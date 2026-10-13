@@ -64,6 +64,14 @@ the retrieved context. The fix was verified **twice, independently** — not
 just once — since LLM outputs carry natural run-to-run variance, and a
 result that holds twice is real evidence, not a lucky run.
 
+The pre-fix run that measured 3.3/5 was not saved to the repo; the two
+post-fix runs are (`evaluation/results.jsonl` and
+`evaluation/results_run1.jsonl`, both 5.0/5 on `out_of_scope`). The later
+October linear baseline scored 4.7/5 on the same category because one
+question (Q90) was answered from general knowledge; Q90 was partly in the
+knowledge base, so it was mislabelled, and it is corrected in the v3 test
+set (see v2 below).
+
 **Full reasoning:** [`DECISIONS.md` C-003](./DECISIONS.md)
 
 ---
@@ -198,6 +206,10 @@ latency comparison needs a paid tier or a dedicated benchmark.
   part it could (T20I: 6 overs) and said the ODI figure was not available.
 
 ### Reproduce
+
+The commands that produced the saved runs. An existing results file is
+resumed, not overwritten, so these do nothing while the files exist; to run
+again, give `--results` a new file name.
 
 ```bash
 uv run python -m evaluation.eval --pin-model --results evaluation/results_linear_oct.jsonl
@@ -359,6 +371,10 @@ Championship answer was rated partial in A1 and full in A2.
   with the captaincy mixed up with vice-captain details and scored 3.
 
 ### Reproduce
+
+The commands that produced the saved runs. An existing results file is
+resumed, not overwritten, so these do nothing while the files exist; to run
+again, give `--results` a new file name.
 
 ```bash
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model \

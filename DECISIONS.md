@@ -57,6 +57,11 @@ a chunk that blends format rules with adjacent unrelated content because a
   one, which is normal RAG behavior but worth naming as the actual cost of
   choosing focus over breadth per chunk
 
+**Status (October 2026):** at 150 documents (v3), header-aware chunking still
+holds on the original questions (the 89 carried over unchanged scored 4.82
+in both v2 and v3), but the scale warning above came true for some
+questions: see the Kohli and Ambrose misses in EVAL_RESULTS (v3).
+
 ---
 
 ## D-002 · Embedding Model: all-MiniLM-L6-v2, Chosen on Architecture, Not Just Benchmarks
@@ -109,7 +114,10 @@ deciding factor.
   which is unneeded for a small, English-only, well-structured knowledge base
 - The quality-parity finding is specific to this knowledge base's size and
   structure and shouldn't be assumed to generalize to a larger or
-  less-curated document set
+  less-curated document set. *(October 2026: v3 confirmed this. At 3,106
+  chunks, near-duplicate chunks pushed exact facts out of the top 4, as in
+  the Kohli and Ambrose misses in EVAL_RESULTS (v3); hybrid search is the
+  README's next step.)*
 
 Note: temperature=0 is set on ChatGoogleGenerativeAI but gemini-3.6-flash ignores it (fixed sampling defaults) — kept in code to document intent, no functional effect.
 
@@ -244,8 +252,8 @@ performance problem.
 ## D-006 · Default Provider/Model: Groq (qwen3.8-27b), Chosen from a Full Speed Comparison
 
 **Decision:** `answer.py`'s default is Groq running `qwen/qwen3.8-27b`, not
-Gemini, despite Gemini being Pitchwise's primary provider elsewhere
-(embeddings-adjacent work).
+Gemini, despite Gemini being Pitchwise's other main provider (it is the
+evaluation judge; embeddings run locally, D-002).
 
 **What's actually true:** the same question, with identical retrieved
 context, was timed against 7 model/provider combinations in a single run:
@@ -285,9 +293,9 @@ enough that this is a soft preference, not a hard rejection — Flash-Lite
 remains a reasonable secondary option, and the finding that it is ~4x faster
 than 3.6-flash is independently useful (see note below). Groq was chosen as
 default primarily because its three models clustered fastest and most
-consistently, and secondarily to keep Gemini's role focused on
-embeddings-adjacent work and multi-provider comparison rather than being
-overloaded as both.
+consistently, and secondarily to keep Gemini free for its other role, the
+evaluation judge, so the model that answers is never the model that grades
+(see `evaluation/eval.py`).
 
 **Why not OpenRouter as default:** both tested free models were
 meaningfully slower (4.3–4.5s) than every Groq option and Gemini's Lite
@@ -515,7 +523,9 @@ Spaces expect.
   be bypassed through the conversation history, which had no limit. The
   API now rejects more than 50 history messages or a message over 4,000
   characters, and both engines send only the last 8 messages, each cut to
-  2,000 characters, to the model, which covers the chat UI too.)*
+  2,000 characters, to the answer model, which covers the chat UI too. The
+  agentic planner already saw only the last 4 messages, `HISTORY_TURNS` in
+  `graph.py`.)*
 - *Keys only at run time* (`--env-file` / Space secrets), never in the image.
 - *The embedding model is baked into the image* so a cold start doesn't
   download it.
@@ -751,7 +761,7 @@ the same pinned model and provider as v2, qwen3.8-27b on Groq's free tier,
 run day by day as the daily token limit allows. A paid route to the same
 model (OpenRouter) was added as an option but is not used for these runs.
 
-**Why:** the three runs need roughly 1.5 million tokens against Groq's free
+**Why:** the four runs were estimated to need roughly 1.5 million tokens against Groq's free
 limit of 200,000 a day for this model, so they take about a week; Groq's
 paid tier was not accepting upgrades at the time. The alternative was the
 same open-weight model through OpenRouter for under a dollar, finishing in
@@ -838,8 +848,10 @@ agentic runs. They are fixed together afterwards.
 
 1. **Answers are generated at the provider's default temperature.** The
    answer call sends no temperature, so Groq uses its default (1.0), while
-   the plan, grade and rewrite calls run at 0 (D-009) and the judge runs at
-   0. Every v2 and v3 run shares this, so comparisons are like with like,
+   the plan, grade and rewrite calls run at 0 (D-009). The judge requests
+   temperature 0, which Gemini 3.5 Flash Lite ignores (it uses fixed
+   sampling, C-011), so the judge is not deterministic either. Every v2 and
+   v3 run shares this, so comparisons are like with like,
    but each answer carries sampling noise. This is part of why each
    agentic configuration is run twice. *After v3:* evaluation runs generate
    at temperature 0.
@@ -1004,6 +1016,8 @@ tracking separately. See the update to D-007 below.
 
 ## C-004 · Misdiagnosed Refusal: the ODI Powerplay Length Is Not in the Knowledge Base
 
+**Date:** October 2026
+
 **What D-007 said:** the powerplay question ("How many overs separate ODI
 and T20I powerplays?") was filed as a Type 2 failure: an over-conservative
 refusal despite full retrieval, because `keyword_coverage` was 100%.
@@ -1048,6 +1062,8 @@ fact, which made a wrong conclusion in this document checkable in minutes.
 
 ## C-005 · `--pin-model` Did Not Pin the Agentic Engine's Routing Calls
 
+**Date:** October 2026
+
 **What D-010 said:** with `--pin-model`, provider fallback is disabled for the
 whole run, so a run measures exactly one model.
 
@@ -1084,6 +1100,8 @@ before), instead of routing always starting from the default model.
 
 ## C-006 · Four Curated Sections Missed the D-003 Restructuring
 
+**Date:** October 2026
+
 **What D-003 said:** every section header and opening line repeats its
 subject's name, so a chunk is unambiguous once separated from its document.
 
@@ -1106,6 +1124,8 @@ recur in generated documents.
 ---
 
 ## C-007 · A Curated Document Went Out of Date: Ben Stokes Retired in 2026
+
+**Date:** October 2026
 
 **What was found:** after the Wikipedia articles were added, the knowledge
 base contradicted itself. The curated Ben Stokes document (written from
@@ -1136,6 +1156,8 @@ claims about the same subject is a future step.
 
 ## C-008 · A v2 Keyword That Could Never Match
 
+**Date:** October 2026
+
 **What was found:** while checking every v3 keyword against the knowledge
 base, v2 Q15 ("How many Test runs did Sachin Tendulkar score?") turned out
 to list its answer twice, as "15,921" and "15921". The documents only use
@@ -1146,7 +1168,11 @@ what every v1 and v2 run reported.
 so the v2 results stay reproducible; the effect on v2's averages is one
 question's retrieval coverage, not any answer score.
 
+---
+
 ## C-009 · Two v3 Test Questions Were Wrong, Found by the First v3 Run
+
+**Date:** October 2026
 
 **What was found:** reading the v3 linear run question by question, not
 just its averages, showed two failures that were the test set's fault:
@@ -1177,7 +1203,11 @@ claim that a larger knowledge base contradicts).
 Absence was checked with narrow search patterns; the model and the judge
 together caught what the patterns missed.
 
+---
+
 ## C-010 · A Query Rewrite Added Nothing Once the First Search Filled the Cap
+
+**Date:** October 2026
 
 **What D-009 said:** when the grader names a missing fact, the engine writes
 a new search query for it and retrieves again.
@@ -1209,7 +1239,11 @@ questions that used a rewrite were re-run with it (the other 172 never reach
 the changed code), and none of their scores changed. Run 2 ran with the fix
 throughout. The v3 linear run makes no rewrites and is unaffected.
 
+---
+
 ## C-011 · The Judge Scored Some Wrong Refusals as Correct
+
+**Date:** October 2026
 
 **What was found:** reading the v3 runs question by question, the judge had
 given 5 out of 5 to five answers that were exactly the fixed refusal
@@ -1232,7 +1266,9 @@ shows the as-judged figure beside each corrected one; the results files
 keep the judge's original scores, so the correction is reproducible from
 them. One case is left as judged: "How many ODI runs has Kane Williamson
 scored?" asks for a total the knowledge base does not give, so refusing is
-correct. Every v2 run is unaffected apart from that question.
+correct and the judge's 5 is right (C-012). No v2 score changes: that
+question is the only answerable-looking refusal scored 5 in any v2 run, and
+it is correct there too.
 
 **Fix, after v3 (with D-018):** the harness scores the exact refusal
 sentence on an answerable question as 1 by rule, without asking the judge.
@@ -1246,5 +1282,26 @@ These scores were caught only because the runs were read question by
 question and compared with each other.
 
 ---
+
+## C-012 · A v2 Question Has No Answer in the Knowledge Base
+
+**Date:** October 2026
+
+**What was found:** while checking C-011, "How many ODI runs has Kane
+Williamson scored?" turned out to be labelled `direct_fact` in both test
+sets, but the knowledge base never gives his ODI total. The curated
+document only says he was the fastest New Zealand batter to reach 3,000 ODI
+runs, which is also all the reference answer says. Refusing is the correct
+answer, and the judge scored the refusal 5 in every run, so no published
+score is wrong; the label is.
+
+**Fix:** none yet. The question stays as it is in both sets so the v2 and v3
+runs remain comparable; it is relabelled or reworded (for example, to ask
+which milestone he reached fastest) together with the D-018 fixes. It is the
+same kind of label error as C-009: a label that claims something about the
+knowledge base, checked only as well as the search behind it.
+
+---
+
 *Author: Somesh Kant Tiwari*
 *Last updated: October 2026*
