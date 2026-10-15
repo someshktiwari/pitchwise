@@ -234,14 +234,7 @@ docker build -t pitchwise .
 docker run -p 7860:7860 --env-file .env pitchwise
 ```
 
-As a public demo on a Hugging Face Docker Space (D-020): commit first (only
-git-tracked files are uploaded), then
-
-```bash
-HF_TOKEN=hf_... uv run python scripts/deploy_hf_space.py   # creates <you>/pitchwise, sets keys from .env as secrets
-```
-
-Questions are limited per visitor and per day (`ratelimit.py`), set by
+Questions are limited per client and per day (`ratelimit.py`, D-020), set by
 `PITCHWISE_RATE_PER_MINUTE` (default 6) and `PITCHWISE_DAILY_LIMIT`
 (default 500); 0 turns a limit off.
 
@@ -261,7 +254,7 @@ pitchwise/
 ├── usage.py                 token and cost accounting for every LLM call
 ├── observability.py         optional Langfuse tracing (no-op without keys)
 ├── api.py                   FastAPI service (/ask, /health) + mounted chat UI
-├── ratelimit.py             per-visitor and daily question limits for the public demo
+├── ratelimit.py             per-client and daily question limits (D-020)
 ├── app.py                   Gradio chat interface
 ├── smoke.py                 live check of both engines on 10 questions
 ├── tests/                   offline tests with scripted fake LLMs and providers
@@ -272,8 +265,6 @@ pitchwise/
 ├── knowledge-base/           curated documents, plus wikipedia/ built by scripts/build_kb.py
 ├── scripts/build_kb.py       fetches and converts the Wikipedia articles (D-014)
 ├── scripts/run_v4_control.sh  the v4 control runs (D-019)
-├── scripts/deploy_hf_space.py deploys to a Hugging Face Docker Space (D-020)
-├── deploy/huggingface/       the Space's README card
 ├── evaluation/
 │   ├── test.py                test question schema + loader
 │   ├── eval.py                 retrieval + LLM-judge evaluation logic
@@ -322,6 +313,12 @@ finished product. Concrete next steps, in rough priority order:
   if BM25 is not enough.
 - **Detect contradictions automatically** — C-007 was found by reading:
   check the knowledge base for conflicting claims about the same subject.
+
+- **Optional: a live deployment** — the service is containerised
+  (`Dockerfile`) with the index built into the image (D-015) and has
+  request limits (D-020). Hugging Face Docker Spaces now need a paid plan;
+  a free host needs more than 512 MB of memory for the embedding model and
+  index, which points to Google Cloud Run with a CPU-only PyTorch build.
 
 ## Licence
 

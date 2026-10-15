@@ -66,7 +66,7 @@ ENGINE_CHOICES = {
     "Agentic RAG (v2, LangGraph)": "agentic",
 }
 DEFAULT_ENGINE_LABEL = "Linear RAG (v1)"
-MAX_QUESTION_CHARS = 500  # protects free-tier API quotas on the public demo
+MAX_QUESTION_CHARS = 500  # protects free-tier API quotas, same cap as api.py
 
 
 def format_usage(u):
@@ -180,7 +180,7 @@ def build_demo():
                 dict(request.headers) if request else None,
                 request.client.host if request and request.client else None)
             refused = ratelimit.limiter.check(client)
-            if refused:  # protects the free-tier quota on the public demo (D-020)
+            if refused:  # protects the free-tier quota (D-020)
                 return history + [{"role": "user", "content": message},
                                   {"role": "assistant", "content": refused}], gr.update(), ""
             new_history, sources = respond(message, history, model_label, engine_label)

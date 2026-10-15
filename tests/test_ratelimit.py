@@ -1,4 +1,4 @@
-"""Offline tests for the public-demo request limits (ratelimit.py, D-020)."""
+"""Offline tests for the request limits (ratelimit.py, D-020)."""
 
 import sys
 from datetime import date

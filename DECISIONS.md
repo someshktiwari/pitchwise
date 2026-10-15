@@ -15,7 +15,7 @@ D-012 through D-013 — v3: token and cost accounting, request tracing.
 D-014 through D-017 — v3: knowledge base expansion, saved index, evaluation model choice, k=8 control.
 D-018 — measurement limits kept fixed for the v3 runs, and what changes after them.
 D-019 — the v4 control: three runs per configuration, so the k=8 vs agent gap is read against its own noise.
-D-020 — a public demo on a Hugging Face Docker Space, with request limits.
+D-020 — request limits on the service, ahead of any public deployment.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -934,34 +934,37 @@ approaches differ; the other categories are not rerun.
 
 ---
 
-## D-020 · A Public Demo on a Hugging Face Docker Space, with Request Limits
+## D-020 · Request Limits on the Service, Ahead of Any Public Deployment
 
 **Date:** October 2026
 
-**Decision:** deploy the existing Docker image (D-011, D-015) to a free
-Hugging Face Docker Space, with the model API keys as Space secrets, and
-limit questions in memory (`ratelimit.py`): six per visitor per minute and
-500 per day across all visitors, both set by environment variable. The
-chat UI gets the same 500-character cap the API already had.
-`scripts/deploy_hf_space.py` creates the Space, sets the secrets from the
-local `.env` and uploads only git-tracked files, with the Space's own
-README card from `deploy/huggingface/`.
+**Decision:** limit questions in memory (`ratelimit.py`): six per client
+per minute and 500 per day across all clients, both set by environment
+variable (`PITCHWISE_RATE_PER_MINUTE`, `PITCHWISE_DAILY_LIMIT`; 0 turns a
+limit off). Both the API's `/ask` and the chat UI check them, and the chat
+UI gets the same 500-character question cap the API already had.
 
-**Why:** a live link lets a reader try the system before reading the code.
-The image already contains the embedding model and the index, so a Space
-only needs configuration. But the demo answers on free-tier keys, so an
-unlimited public page lets one visitor or one script use up the day's quota
-for everyone; the agentic engine makes up to seven calls per question.
+**Why:** the service answers on free-tier API keys, and the agentic engine
+makes up to seven calls per question. Exposed publicly without limits, one
+visitor or one script could use up the day's quota for everyone. The limits
+are in place before any deployment, so deploying is configuration only.
+
+**Deployment, not done:** a Hugging Face Docker Space was the plan, since
+the image already contains the embedding model and index (D-002, D-015),
+but Hugging Face now requires a paid plan for Docker Spaces. Free container
+hosts with 512 MB of memory are likely too small for PyTorch, the embedding
+model and a 3,106-chunk index. Google Cloud Run, with 2 GiB, one instance at
+most and a budget alert, fits its free allowance; the image should first
+switch to a CPU-only PyTorch build, since the lockfile currently pulls the
+CUDA build on Linux, several gigabytes the service never uses.
 
 **Alternatives considered:** a shared store (Redis) for limits, needed only
-with several replicas; a free Space runs one container, so in-memory state
-is enough, and a restart resetting the counts is acceptable. Requiring
-visitors to sign in, rejected as too much friction for a portfolio demo.
+with several replicas; one container keeps state in memory, and a restart
+resetting the counts is acceptable.
 
-**Trade-offs accepted:** limits are per visitor address, taken from the
-first `X-Forwarded-For` entry behind Hugging Face's proxy, so visitors
-sharing an address share a limit. A free Space sleeps when idle, so the
-first request after a pause waits for the container to start.
+**Trade-offs accepted:** limits are per client address, taken from the
+first `X-Forwarded-For` entry when the service runs behind a proxy, so
+clients sharing an address share a limit.
 
 ---
 

@@ -1,8 +1,8 @@
 """
 ratelimit.py
 
-Request limits for the public demo (D-020). The demo answers with free-tier
-API keys, so an unlimited public page lets one visitor (or a script) use
+Request limits on the service (D-020). It answers with free-tier API keys,
+so an unlimited public deployment would let one visitor (or a script) use
 up the day's quota for everyone. Two limits, both in memory:
 
   - per client: at most PER_CLIENT_PER_MINUTE questions in any 60 seconds
@@ -14,7 +14,7 @@ Both are set by environment variable; 0 turns a limit off:
   PITCHWISE_DAILY_LIMIT       default 500
 
 In-memory state resets on restart and is per process, which is enough for
-one free Hugging Face Space container. Several replicas would need a
+a single container. Several replicas would need a
 shared store such as Redis.
 """
 
@@ -71,7 +71,7 @@ class RateLimiter:
 
 
 def client_id_from(headers, fallback_host):
-    """The visitor's address. Behind Hugging Face's proxy the connecting
+    """The visitor's address. Behind a reverse proxy the connecting
     host is the proxy, so the first X-Forwarded-For entry is used when
     present."""
     forwarded = headers.get("x-forwarded-for") if headers else None
