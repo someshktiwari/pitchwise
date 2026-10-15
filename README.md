@@ -210,7 +210,15 @@ uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --engine agen
 uv run python -m evaluation.eval --tests evaluation/tests_v3.jsonl --pin-model --k 8 \
     --category spanning --results evaluation/results_v3_k8_new.jsonl  # a new k=8 control run (D-017)
 uv run python -m evaluation.compare_runs      # dashboard comparing saved runs, no LLM calls
+bash scripts/run_v4_control.sh                # v4 control: k=4, k=8, agentic x 3 runs each (D-019)
+uv run python -m evaluation.variance "k=8=evaluation/results_v4_linear_k8_r*.jsonl" \
+    "agentic=evaluation/results_v4_agentic_r*.jsonl" --category spanning  # mean and range per configuration
 ```
+
+From v4, evaluation runs generate answers at temperature 0 and score the
+fixed refusal on an answerable question by rule (D-018, C-011); add
+`--provider-default-temperature` to reproduce how the v1-v3 runs were
+generated.
 
 Ask through the API:
 
@@ -225,6 +233,17 @@ With Docker:
 docker build -t pitchwise .
 docker run -p 7860:7860 --env-file .env pitchwise
 ```
+
+As a public demo on a Hugging Face Docker Space (D-020): commit first (only
+git-tracked files are uploaded), then
+
+```bash
+HF_TOKEN=hf_... uv run python scripts/deploy_hf_space.py   # creates <you>/pitchwise, sets keys from .env as secrets
+```
+
+Questions are limited per visitor and per day (`ratelimit.py`), set by
+`PITCHWISE_RATE_PER_MINUTE` (default 6) and `PITCHWISE_DAILY_LIMIT`
+(default 500); 0 turns a limit off.
 
 Requires free API keys for Gemini, Groq, and OpenRouter in a `.env` file
 (see `.env.example`). All embeddings run locally — no key needed for
@@ -242,6 +261,7 @@ pitchwise/
 ├── usage.py                 token and cost accounting for every LLM call
 ├── observability.py         optional Langfuse tracing (no-op without keys)
 ├── api.py                   FastAPI service (/ask, /health) + mounted chat UI
+├── ratelimit.py             per-visitor and daily question limits for the public demo
 ├── app.py                   Gradio chat interface
 ├── smoke.py                 live check of both engines on 10 questions
 ├── tests/                   offline tests with scripted fake LLMs and providers
@@ -251,12 +271,16 @@ pitchwise/
 ├── evaluator.py              visual evaluation dashboard
 ├── knowledge-base/           curated documents, plus wikipedia/ built by scripts/build_kb.py
 ├── scripts/build_kb.py       fetches and converts the Wikipedia articles (D-014)
+├── scripts/run_v4_control.sh  the v4 control runs (D-019)
+├── scripts/deploy_hf_space.py deploys to a Hugging Face Docker Space (D-020)
+├── deploy/huggingface/       the Space's README card
 ├── evaluation/
 │   ├── test.py                test question schema + loader
 │   ├── eval.py                 retrieval + LLM-judge evaluation logic
 │   ├── compare_k.py             retriever k-value comparison tooling
 │   ├── mechanism.py             final-context keyword coverage for the agentic engine
 │   ├── compare_runs.py          dashboard comparing saved evaluation runs
+│   ├── variance.py              mean and range of repeated runs per configuration
 │   ├── results_*.jsonl          saved runs: v1/v2 runs, and the v3 runs (results_v3_*)
 │   ├── build_tests_v3.py        builds and checks the v3 test set
 │   ├── tests_v3.jsonl           177 questions for the expanded knowledge base
@@ -280,10 +304,12 @@ existing for show.
 Pitchwise is presented here as a working, evaluated project — not a
 finished product. Concrete next steps, in rough priority order:
 
-- **Tighten the measurement (D-018, C-011)** — generate evaluation answers
-  at temperature 0, match keywords as whole words and recompute every saved
-  run's retrieval metrics, and score the fixed refusal sentence on an
-  answerable question as wrong by rule instead of leaving it to the judge.
+- **Finish the v4 control (D-019)** — the measurement fixes are in
+  (answers at temperature 0, whole-word keywords, refusals scored by rule);
+  three runs each of k=4, k=8 and the agent are under way, to see whether
+  the agent's lead over k=8 is larger than run-to-run noise. Still to do
+  from D-018: make generic keywords specific and recompute the saved runs'
+  retrieval metrics.
 - **Hybrid search, then a reranker if needed** — the v3 runs call for it.
   Ambrose's "405 Test wickets" sits in the first paragraph of his article,
   yet no search retrieved it, not even the agent's "Curtly Ambrose Test
@@ -296,10 +322,6 @@ finished product. Concrete next steps, in rough priority order:
   if BM25 is not enough.
 - **Detect contradictions automatically** — C-007 was found by reading:
   check the knowledge base for conflicting claims about the same subject.
-- **Optional: a live deployment** — the service is containerised
-  (`Dockerfile`) with the index built into the image (D-015), so a Hugging
-  Face Docker Space would need only its configuration and API keys as
-  secrets.
 
 ## Licence
 

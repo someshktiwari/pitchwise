@@ -14,6 +14,8 @@ D-009 through D-011 — v2: agentic engine, evaluation changes, service layer.
 D-012 through D-013 — v3: token and cost accounting, request tracing.
 D-014 through D-017 — v3: knowledge base expansion, saved index, evaluation model choice, k=8 control.
 D-018 — measurement limits kept fixed for the v3 runs, and what changes after them.
+D-019 — the v4 control: three runs per configuration, so the k=8 vs agent gap is read against its own noise.
+D-020 — a public demo on a Hugging Face Docker Space, with request limits.
 
 **Part II — Corrections**
 Every bug fixed, every incorrect assumption corrected, every change made during
@@ -876,6 +878,91 @@ agentic runs. They are fixed together afterwards.
 on the same code. Fixing any of these now would change two things between
 the runs being compared.
 
+**Status (October 2026, after v3):**
+1. Done. `evaluation/eval.py` sets `answer.ANSWER_TEMPERATURE = 0` for every
+   run; `--provider-default-temperature` reproduces the v1-v3 setting. The
+   app still answers at the provider default. Each result row records the
+   temperature it was generated at. The judge stays non-deterministic
+   (Gemini 3.5 Flash Lite ignores temperature), which is one reason D-019
+   repeats every configuration.
+2. Partly done. Keywords are matched as whole words (`keyword_in` in
+   `evaluation/eval.py`, also used by `evaluation/mechanism.py`). Making
+   generic keywords specific and recomputing the retrieval metrics of the
+   saved v1-v3 runs are not done yet; the v1-v3 tables keep their
+   substring-matched retrieval figures, which the judge's scores do not use.
+3. Unchanged, as planned.
+
+---
+
+## D-019 · The v4 Control: Three Runs per Configuration
+
+**Date:** October 2026
+
+**Decision:** rerun the D-017 comparison, the linear engine at k=4 and at
+k=8 and the agentic engine on the 32 `spanning` questions of the v3 test
+set, three times each, after the D-018 and C-011 fixes, pinned to the same
+model as every v2 and v3 run (qwen3.8-27b on Groq, D-016). Report each
+configuration's mean and range across its runs (`evaluation/variance.py`),
+not a single run's score. `scripts/run_v4_control.sh` runs the matrix.
+
+**Why:** the v3 result is the project's main claim, that raising k recovers
+most of the agent's gain on compound questions and the agent adds one or
+two correct answers out of 32 at about twice the cost per correct answer.
+In v3, k=4 and k=8 were run once each and the agent twice, while the gap
+being claimed (0.13 and 0.19) is the size of the run-to-run differences
+v2's two agentic runs showed (up to 0.13 per category). A single run cannot
+say whether a gap that size is real. Three runs each, at temperature 0 and
+with refusals scored by rule, give each configuration a range of its own,
+so the gap can be read against it.
+
+**What would change the conclusion:** if the agent's range and k=8's range
+overlap, the report says the agent's advantage over k=8 is not separable
+from run-to-run noise at this many runs, and the recommendation becomes
+"raise k" without the qualifier. If they do not overlap, the v3 conclusion
+stands with a measured margin.
+
+**Cost:** one set of the three configurations takes about 175,000 answer
+tokens (the v3 runs: k=4 about 24,000, k=8 about 45,000, the agent about
+105,000 on these 32 questions), so three sets need about 520,000, three days
+of Groq's free daily limit for this model. Judging runs on Gemini's free
+tier, separately (about 290 calls).
+
+**Trade-off accepted:** three runs give a range, not a confidence
+interval; 32 questions remain a small set, so a one-question swing is 0.03
+to 0.13 in the mean. The comparison is limited to `spanning`, where the two
+approaches differ; the other categories are not rerun.
+
+---
+
+## D-020 · A Public Demo on a Hugging Face Docker Space, with Request Limits
+
+**Date:** October 2026
+
+**Decision:** deploy the existing Docker image (D-011, D-015) to a free
+Hugging Face Docker Space, with the model API keys as Space secrets, and
+limit questions in memory (`ratelimit.py`): six per visitor per minute and
+500 per day across all visitors, both set by environment variable. The
+chat UI gets the same 500-character cap the API already had.
+`scripts/deploy_hf_space.py` creates the Space, sets the secrets from the
+local `.env` and uploads only git-tracked files, with the Space's own
+README card from `deploy/huggingface/`.
+
+**Why:** a live link lets a reader try the system before reading the code.
+The image already contains the embedding model and the index, so a Space
+only needs configuration. But the demo answers on free-tier keys, so an
+unlimited public page lets one visitor or one script use up the day's quota
+for everyone; the agentic engine makes up to seven calls per question.
+
+**Alternatives considered:** a shared store (Redis) for limits, needed only
+with several replicas; a free Space runs one container, so in-memory state
+is enough, and a restart resetting the counts is acceptable. Requiring
+visitors to sign in, rejected as too much friction for a portfolio demo.
+
+**Trade-offs accepted:** limits are per visitor address, taken from the
+first `X-Forwarded-For` entry behind Hugging Face's proxy, so visitors
+sharing an address share a limit. A free Space sleeps when idle, so the
+first request after a pause waits for the container to start.
+
 ---
 
 # Part II — Corrections
@@ -1277,6 +1364,14 @@ exact. Gemini 3.5 Flash Lite also ignores the temperature setting (it uses
 fixed sampling), so the judge itself is not deterministic; a rule removes
 it from the one case that matters most.
 
+**Status (October 2026):** implemented in `evaluation/eval.py`
+(`refusal_rule`). The sentence lives once, as `answer.REFUSAL_SENTENCE`,
+and the system prompt is formatted from it, so the prompt and the rule
+cannot drift apart. Matching ignores case, surrounding quotes, a trailing
+full stop and curly apostrophes; an answer that adds anything to the
+sentence still goes to the judge. Rows record `scored_by: "rule"` or
+`"judge"`. `out_of_scope` questions always go to the judge.
+
 **Lesson:** an LLM judge needs the same scrutiny as the system it grades.
 These scores were caught only because the runs were read question by
 question and compared with each other.
@@ -1297,7 +1392,13 @@ score is wrong; the label is.
 
 **Fix:** none yet. The question stays as it is in both sets so the v2 and v3
 runs remain comparable; it is relabelled or reworded (for example, to ask
-which milestone he reached fastest) together with the D-018 fixes. It is the
+which milestone he reached fastest) together with the D-018 fixes.
+
+**Status (October 2026):** reworded in `tests_v3.jsonl` with the D-018
+fixes, to "Which ODI milestone was Kane Williamson the fastest New Zealand
+batter to reach?", keeping `direct_fact` and the same reference answer. The
+v2 set (`tests.jsonl`) is frozen and keeps the original wording. Runs on the
+reworded set are v4 runs; the saved v3 files keep the question as it was. It is the
 same kind of label error as C-009: a label that claims something about the
 knowledge base, checked only as well as the search behind it.
 

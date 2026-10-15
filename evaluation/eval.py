@@ -22,12 +22,14 @@ harness measures that gap directly rather than relying on spot-checking.
 
 import json
 import math
+import re
 import time
 from pathlib import Path
 from pydantic import BaseModel, Field
 
 from evaluation.test import TestQuestion, load_tests
-from answer import answer_question, retrieve_context, call_model, MODEL_OPTIONS, ALL_MODEL_OPTIONS
+import answer
+from answer import answer_question, retrieve_context, call_model, MODEL_OPTIONS, ALL_MODEL_OPTIONS, REFUSAL_SENTENCE
 import observability as obs
 import usage
 
@@ -60,11 +62,19 @@ class AnswerEval(BaseModel):
     relevance: float = Field(description="1 (off-topic) to 5 (directly on-topic)")
 
 
+def keyword_in(keyword: str, text: str) -> bool:
+    """Whole-word, case-insensitive match (D-018). A substring match counted
+    "red" inside "scored" and "199" inside "1999". A keyword counts only
+    where it is not part of a longer word or number; for multi-word
+    keywords, the same applies at each end."""
+    pattern = r"(?<![\w])" + re.escape(keyword.lower()) + r"(?![\w])"
+    return re.search(pattern, text.lower()) is not None
+
+
 def calculate_mrr(keyword: str, retrieved_docs: list) -> float:
-    """Reciprocal rank for a single keyword (case-insensitive)."""
-    keyword_lower = keyword.lower()
+    """Reciprocal rank for a single keyword (whole word, case-insensitive)."""
     for rank, doc in enumerate(retrieved_docs, start=1):
-        if keyword_lower in doc.page_content.lower():
+        if keyword_in(keyword, doc.page_content):
             return 1.0 / rank
     return 0.0
 
@@ -77,8 +87,7 @@ def calculate_dcg(relevances: list[int], k: int) -> float:
 
 
 def calculate_ndcg(keyword: str, retrieved_docs: list, k: int = 10) -> float:
-    keyword_lower = keyword.lower()
-    relevances = [1 if keyword_lower in doc.page_content.lower() else 0 for doc in retrieved_docs[:k]]
+    relevances = [1 if keyword_in(keyword, doc.page_content) else 0 for doc in retrieved_docs[:k]]
     dcg = calculate_dcg(relevances, k)
     ideal_relevances = sorted(relevances, reverse=True)
     idcg = calculate_dcg(ideal_relevances, k)
@@ -133,6 +142,29 @@ def _parse_judge_json(raw_text: str) -> dict:
     return json.loads(cleaned.strip())
 
 
+def _normalise(text: str) -> str:
+    return (text or "").replace("\u2019", "'").strip().strip('"').strip().rstrip(".").lower()
+
+
+def is_refusal(text: str) -> bool:
+    """True if the answer is exactly the fixed refusal sentence (C-003),
+    ignoring case, surrounding quotes, a trailing full stop and curly
+    apostrophes."""
+    return _normalise(text) == _normalise(REFUSAL_SENTENCE)
+
+
+def refusal_rule(test: TestQuestion, generated_answer: str):
+    """Score the fixed refusal on an answerable question as wrong, by rule,
+    without asking the judge (C-011). The judge had scored some of these 5,
+    applying its out-of-scope rule to answerable questions. Returns an
+    AnswerEval, or None when the judge should score the answer."""
+    if test.category == "out_of_scope" or not is_refusal(generated_answer):
+        return None
+    return AnswerEval(
+        feedback="Rule (C-011): the fixed refusal on a question the knowledge base answers.",
+        accuracy=1, completeness=1, relevance=1)
+
+
 def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None, engine="linear",
                     allow_fallback=True, trace_out=None, model_label=None) -> tuple[AnswerEval, str, list]:
     """Evaluate answer quality using LLM-as-a-judge.
@@ -148,6 +180,15 @@ def evaluate_answer(vectorstore, test: TestQuestion, retriever_k=None, engine="l
     if trace_out is not None:
         trace_out.clear()
         trace_out.update(trace)
+
+    ruled = refusal_rule(test, generated_answer)
+    if ruled is not None:
+        if trace_out is not None:
+            trace_out["scored_by"] = "rule"
+            trace_out["judge_usage"] = None
+        return ruled, generated_answer, retrieved_docs
+    if trace_out is not None:
+        trace_out["scored_by"] = "judge"
 
     judge_system_prompt = (
         "You are an expert evaluator assessing the quality of answers. "
@@ -268,7 +309,8 @@ def _load_completed_questions():
 
 
 def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=None, allow_fallback=True,
-                        tests_file=None, model_label=None, retriever_k=None, category=None):
+                        tests_file=None, model_label=None, retriever_k=None, category=None,
+                        answer_temperature=0.0):
     """Run retrieval + answer evaluation across the full test set.
 
     Saves each result to evaluation/results.jsonl as soon as it's computed
@@ -281,12 +323,17 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
     prior run, those questions are skipped rather than re-evaluated.
     """
     global RESULTS_FILE
+    # From v4, answers are generated at temperature 0 (D-018). Pass None to
+    # reproduce how the v1-v3 runs were generated (provider default).
+    answer.ANSWER_TEMPERATURE = answer_temperature
     if results_file:
         RESULTS_FILE = str(results_file)  # one file per run, never mix two runs (D-010)
     if model_label is not None and model_label not in ALL_MODEL_OPTIONS:
         raise SystemExit(f"Unknown model {model_label!r}. Choose one of: {list(ALL_MODEL_OPTIONS)}")
     print(f"Engine: {engine} | model: {model_label or 'default'} | "
-          f"fallback: {'on' if allow_fallback else 'off (pinned model)'} | results: {RESULTS_FILE}")
+          f"fallback: {'on' if allow_fallback else 'off (pinned model)'} | "
+          f"answer temperature: {'provider default' if answer_temperature is None else answer_temperature} | "
+          f"results: {RESULTS_FILE}")
 
     if retriever_k is not None and engine != "linear":
         raise SystemExit("--k applies to the linear engine only (D-017)")
@@ -346,6 +393,8 @@ def run_full_evaluation(vectorstore, resume=True, engine="linear", results_file=
             "judge_usage": trace.get("judge_usage"),  # grading, kept separate
             "retriever_k": trace.get("retriever_k"),
             "langfuse_trace_id": trace.get("langfuse_trace_id"),
+            "scored_by": trace.get("scored_by"),           # "judge", or "rule" for C-011 refusals
+            "answer_temperature": answer.ANSWER_TEMPERATURE,  # None = provider default (v1-v3)
         }
         # The judge's scores on the trace that produced the answer (D-013), so
         # low-scoring answers can be filtered and opened in Langfuse.
@@ -423,10 +472,14 @@ if __name__ == "__main__":
                                               "for the k=8 control (D-017)")
     parser.add_argument("--category", choices=["direct_fact", "spanning", "temporal", "out_of_scope"],
                         help="run one category of the test set only")
+    parser.add_argument("--provider-default-temperature", action="store_true",
+                        help="generate answers at the provider's default temperature, as the v1-v3 "
+                             "runs did, instead of 0 (D-018)")
     args = parser.parse_args()
 
     store = ingest()
     run_full_evaluation(store, resume=not args.no_resume, engine=args.engine,
                         results_file=args.results, allow_fallback=not args.pin_model,
                         tests_file=args.tests, model_label=args.model, retriever_k=args.k,
-                        category=args.category)
+                        category=args.category,
+                        answer_temperature=None if args.provider_default_temperature else 0.0)

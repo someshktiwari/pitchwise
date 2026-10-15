@@ -391,6 +391,56 @@ uv run python -m evaluation.compare_runs L=evaluation/results_v3_linear.jsonl \
 
 ---
 
+## v4: is the agent's lead over k=8 bigger than run-to-run noise? (October 2026)
+
+> **Status: runs in progress.** This section is filled in from
+> `evaluation/variance.py` when all nine runs finish. Until then, the v3
+> result above stands with the caveat it already carries: k=8 was run once.
+
+In v3 the agent led k=8 on `spanning` by 0.13 and 0.19, one or two correct
+answers out of 32. That is about the size of the differences between two
+runs of the *same* configuration in v2. So v4 asks one question: does the
+lead survive repetition?
+
+**What changed in the measurement ([`DECISIONS.md`](./DECISIONS.md) D-018,
+C-011, C-012, D-019):**
+
+- answers generated at temperature 0, not the provider default (1.0)
+- the fixed refusal sentence on an answerable question scored 1 by rule,
+  not by the judge
+- keywords matched as whole words in the retrieval metrics
+- the one mislabelled question reworded (C-012)
+- each configuration run **three times**, same model as v2 and v3
+  (qwen3.8-27b on Groq), reported as mean and range
+
+Because generation and scoring changed, v4 numbers are compared with each
+other, not with v3's.
+
+### Results on the 32 `spanning` questions
+
+| Configuration | Runs | Mean accuracy | Range | Correct (≥4) per run | $ per 1,000 Q |
+|---|---|---|---|---|---|
+| Linear, k=4 | 3 | — | — | — | — |
+| Linear, k=8 | 3 | — | — | — | — |
+| Agentic | 3 | — | — | — | — |
+
+**Verdict:** pending. If the agent's range and k=8's overlap, its lead is
+not separable from run-to-run noise at three runs, and the recommendation is
+simply "raise k". If they do not overlap, the v3 conclusion stands with a
+measured margin.
+
+### Reproduce
+
+```bash
+bash scripts/run_v4_control.sh     # 3 runs x 3 configurations, ~520k Groq tokens (about 3 free-tier days)
+uv run python -m evaluation.variance \
+    "k=4=evaluation/results_v4_linear_k4_r*.jsonl" \
+    "k=8=evaluation/results_v4_linear_k8_r*.jsonl" \
+    "agentic=evaluation/results_v4_agentic_r*.jsonl" --category spanning
+```
+
+---
+
 ## Screenshots
 
 **Chat interface** (`app.py`) — a live conversation, showing the retrieved

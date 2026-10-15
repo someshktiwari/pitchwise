@@ -1,0 +1,4 @@
+# Exploration notebooks are working notes, not the system. Excluding them
+# from GitHub's language statistics keeps the repo classified as Python.
+notebooks/** linguist-documentation
+*.ipynb linguist-documentation

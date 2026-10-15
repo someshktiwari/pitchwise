@@ -19,6 +19,7 @@ are local (D-002), so no embedding API key is needed.
 import gradio as gr
 from ingest import ingest
 from answer import answer_question, MODEL_OPTIONS, DEFAULT_MODEL_LABEL
+import ratelimit
 
 print("Starting Pitchwise — building vector store...")
 vectorstore = ingest()
@@ -65,6 +66,7 @@ ENGINE_CHOICES = {
     "Agentic RAG (v2, LangGraph)": "agentic",
 }
 DEFAULT_ENGINE_LABEL = "Linear RAG (v1)"
+MAX_QUESTION_CHARS = 500  # protects free-tier API quotas on the public demo
 
 
 def format_usage(u):
@@ -167,7 +169,20 @@ def build_demo():
                     label="Sources",
                 )
 
-        def submit_and_clear(message, history, model_label, engine_label):
+        def submit_and_clear(message, history, model_label, engine_label, request: gr.Request = None):
+            if not (message or "").strip():
+                return history, gr.update(), ""
+            if len(message) > MAX_QUESTION_CHARS:  # same cap as the API's /ask (api.py)
+                return history + [{"role": "user", "content": message[:MAX_QUESTION_CHARS] + "…"},
+                                  {"role": "assistant", "content":
+                                   f"Please keep questions under {MAX_QUESTION_CHARS} characters."}], gr.update(), ""
+            client = ratelimit.client_id_from(
+                dict(request.headers) if request else None,
+                request.client.host if request and request.client else None)
+            refused = ratelimit.limiter.check(client)
+            if refused:  # protects the free-tier quota on the public demo (D-020)
+                return history + [{"role": "user", "content": message},
+                                  {"role": "assistant", "content": refused}], gr.update(), ""
             new_history, sources = respond(message, history, model_label, engine_label)
             return new_history, sources, ""  # clear the textbox after submit
 

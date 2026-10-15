@@ -24,11 +24,12 @@ from contextlib import asynccontextmanager
 from typing import Literal, Optional
 
 import gradio as gr
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
 import app as ui  # builds the vector store on import and exposes build_demo()
 import observability as obs
+import ratelimit
 from answer import MODEL_OPTIONS, answer_question
 
 MAX_QUESTION_CHARS = 500  # protects free-tier API quotas on a public demo
@@ -86,9 +87,13 @@ def health():
 
 
 @api.post("/ask", response_model=AskResponse)
-def ask(req: AskRequest):
+def ask(req: AskRequest, request: Request):
     if not req.question.strip():
         raise HTTPException(status_code=400, detail="Question is empty.")
+    client = ratelimit.client_id_from(request.headers, request.client.host if request.client else None)
+    refused = ratelimit.limiter.check(client)
+    if refused:
+        raise HTTPException(status_code=429, detail=refused)  # protects the free-tier quota (D-020)
     if req.model_label is not None and req.model_label not in MODEL_OPTIONS:
         raise HTTPException(status_code=400, detail=f"Unknown model_label. Choose one of: {list(MODEL_OPTIONS)}")
 

@@ -43,6 +43,16 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 MAX_HISTORY_MESSAGES = 8
 MAX_HISTORY_MESSAGE_CHARS = 2000
 
+# Temperature for the final answer call. None sends no temperature, so the
+# provider default applies (Groq: 1.0): how every v1-v3 run and the app
+# answer. Evaluation runs set it to 0 from v4 on (D-018), so a difference
+# between two configurations is less likely to be sampling noise.
+ANSWER_TEMPERATURE = None
+
+# The exact sentence the system prompt asks for when the context does not
+# answer the question (C-003). The evaluation scores it by rule (C-011).
+REFUSAL_SENTENCE = "I don't have information about that in my knowledge base."
+
 RETRIEVER_K = 4  # chunks retrieved per question — Chroma's default, stated
                  # explicitly rather than left implicit; revisit once the
                  # evaluation harness can measure retrieval quality directly
@@ -52,7 +62,7 @@ You are Pitchwise, a cricket assistant that answers ONLY using the context provi
 
 Rules:
 - Base your answer STRICTLY on the provided context. Do not use any outside knowledge, even if you are confident it is correct.
-- If the context does not contain enough information to answer the question, respond exactly: "I don't have information about that in my knowledge base." Do not guess, speculate, or answer from general knowledge instead.
+- If the context does not contain enough information to answer the question, respond exactly: "{refusal}" Do not guess, speculate, or answer from general knowledge instead.
 - Do not mention players, teams, tournaments, or facts that do not appear in the context below.
 - Keep answers concise and directly grounded in the retrieved context.
 
@@ -260,9 +270,10 @@ def generate_from_context(question, context, history=None, model_label=None, all
     context string, through the fallback chain. Shared by both engines so
     any difference between them comes from retrieval, not wording (D-009).
     Returns (answer_text, label_that_answered)."""
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(context=context, refusal=REFUSAL_SENTENCE)
     return generate_with_fallback(system_prompt, question, history=history,
-                                  model_label=model_label, allow_fallback=allow_fallback)
+                                  model_label=model_label, allow_fallback=allow_fallback,
+                                  temperature=ANSWER_TEMPERATURE)
 
 
 def trim_history(history):

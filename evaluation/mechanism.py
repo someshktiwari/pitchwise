@@ -25,6 +25,7 @@ eval model's daily quota.
 import sys
 
 from answer import retrieve_context
+from evaluation.eval import keyword_in
 from evaluation.test import load_tests
 from graph import run_agentic
 from ingest import ingest
@@ -37,8 +38,8 @@ MODEL = "Groq: gpt-oss-20b"
 def coverage(keywords, docs):
     if not keywords:
         return None
-    text = " ".join(d.page_content.lower() for d in docs)
-    found = [k for k in keywords if k.lower() in text]
+    text = " ".join(d.page_content for d in docs)
+    found = [k for k in keywords if keyword_in(k, text)]  # whole word (D-018)
     return 100 * len(found) / len(keywords), [k for k in keywords if k not in found]
 
 
