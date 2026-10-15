@@ -28,6 +28,11 @@ def q(question, keywords, reference, category, doc=None):
 
 # ---- changes to v2 questions (1-based numbers) ----
 changes = {
+    # C-012: the knowledge base gives a milestone, not his ODI total, so the
+    # question asks for the milestone (reworded with the D-018 fixes).
+    23: q("Which ODI milestone was Kane Williamson the fastest New Zealand batter to reach?", ["Williamson", "3,000"],
+          "Kane Williamson became the fastest New Zealand batter to reach 3,000 ODI runs.",
+          "direct_fact", "players/kane-williamson.md"),
     21: q("Between which years was Ben Stokes England's Test captain?", ["Stokes", "April 2022", "2026"],
           "Ben Stokes was England's Test captain from April 2022 until he retired from international cricket in 2026.",
           "temporal", "players/ben-stokes.md"),
@@ -197,7 +202,7 @@ for t in out:
         continue
     src = texts[doc].lower() if doc else all_text
     for k in t["keywords"]:
-        if k.lower() not in src:
+        if not re.search(r"(?<!\w)" + re.escape(k.lower()) + r"(?!\w)", src):  # whole word (D-018)
             problems.append(f"missing {k!r} in {doc or 'KB'}: {t['question']}")
 from collections import Counter
 print(len(out), Counter(t["category"] for t in out))

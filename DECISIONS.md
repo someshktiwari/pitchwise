@@ -886,7 +886,9 @@ the runs being compared.
    (Gemini 3.5 Flash Lite ignores temperature), which is one reason D-019
    repeats every configuration.
 2. Partly done. Keywords are matched as whole words (`keyword_in` in
-   `evaluation/eval.py`, also used by `evaluation/mechanism.py`). Making
+   `evaluation/eval.py`, also used by `evaluation/mechanism.py`), and
+   `evaluation/build_tests_v3.py` now checks every keyword against its
+   source document as a whole word too; all of them still pass. Making
    generic keywords specific and recomputing the retrieval metrics of the
    saved v1-v3 runs are not done yet; the v1-v3 tables keep their
    substring-matched retrieval figures, which the judge's scores do not use.
@@ -1400,7 +1402,9 @@ which milestone he reached fastest) together with the D-018 fixes.
 **Status (October 2026):** reworded in `tests_v3.jsonl` with the D-018
 fixes, to "Which ODI milestone was Kane Williamson the fastest New Zealand
 batter to reach?", keeping `direct_fact` and the same reference answer. The
-v2 set (`tests.jsonl`) is frozen and keeps the original wording. Runs on the
+v2 set (`tests.jsonl`) is frozen and keeps the original wording. The rewording
+lives in `evaluation/build_tests_v3.py` as a change to v2 question 23, so
+rebuilding the v3 set reproduces it instead of reverting it. Runs on the
 reworded set are v4 runs; the saved v3 files keep the question as it was. It is the
 same kind of label error as C-009: a label that claims something about the
 knowledge base, checked only as well as the search behind it.
