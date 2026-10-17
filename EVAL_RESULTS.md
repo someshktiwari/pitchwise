@@ -393,41 +393,65 @@ uv run python -m evaluation.compare_runs L=evaluation/results_v3_linear.jsonl \
 
 ## v4: is the agent's lead over k=8 bigger than run-to-run noise? (October 2026)
 
-> **Status: runs in progress.** This section is filled in from
-> `evaluation/variance.py` when all nine runs finish. Until then, the v3
-> result above stands with the caveat it already carries: k=8 was run once.
-
 In v3 the agent led k=8 on `spanning` by 0.13 and 0.19, one or two correct
-answers out of 32. That is about the size of the differences between two
-runs of the *same* configuration in v2. So v4 asks one question: does the
-lead survive repetition?
+answers out of 32: about the size of the difference between two runs of the
+*same* configuration in v2. v4 asked whether the lead survives repetition.
 
 **What changed in the measurement ([`DECISIONS.md`](./DECISIONS.md) D-018,
-C-011, C-012, D-019):**
-
-- answers generated at temperature 0, not the provider default (1.0)
-- the fixed refusal sentence on an answerable question scored 1 by rule,
-  not by the judge
-- keywords matched as whole words in the retrieval metrics
-- the one mislabelled question reworded (C-012)
-- each configuration run **three times**, same model as v2 and v3
-  (qwen3.8-27b on Groq), reported as mean and range
-
-Because generation and scoring changed, v4 numbers are compared with each
-other, not with v3's.
+C-011, C-012, D-019):** answers generated at temperature 0 instead of the
+provider default (1.0); the fixed refusal on an answerable question scored 1
+by rule, not by the judge; keywords matched as whole words; the mislabelled
+C-012 question reworded; each configuration run three times on the same
+pinned model as v2 and v3 (qwen3.8-27b on Groq). Because generation and
+scoring changed, v4 numbers are compared with each other, not with v3's.
 
 ### Results on the 32 `spanning` questions
 
-| Configuration | Runs | Mean accuracy | Range | Correct (≥4) per run | $ per 1,000 Q |
+| Configuration | Accuracy, runs 1 / 2 / 3 | Correct (≥4) per run | Tokens per question | $ per 1,000 Q | $ per 1,000 correct |
 |---|---|---|---|---|---|
-| Linear, k=4 | 3 | — | — | — | — |
-| Linear, k=8 | 3 | — | — | — | — |
-| Agentic | 3 | — | — | — | — |
+| Linear, k=4 | 3.62 / 3.62 / 3.62 | 21 / 21 / 21 | 751 | $0.72 | $1.10 |
+| Linear, k=8 | 4.34 / 4.28 / 4.28 | 27 / 26 / 26 | 1,405 | $1.38 | $1.68 |
+| Agentic | 4.50 / 4.50 / 4.50 | 28 / 28 / 28 | 3,251 | $2.94 | $3.36 |
 
-**Verdict:** pending. If the agent's range and k=8's overlap, its lead is
-not separable from run-to-run noise at three runs, and the recommendation is
-simply "raise k". If they do not overlap, the v3 conclusion stands with a
-measured margin.
+As judged. With the one C-013 correction (a k=8 answer that leaked the
+model's reasoning and ended in a refusal, scored 5 in two runs), k=8 is
+26 / 25 / 26 correct.
+
+### What the repeats showed
+
+**At temperature 0 the system is effectively deterministic.** k=4's runs 2
+and 3 gave the same 32 answers word for word, and run 1 matched them on
+every score and token count; the agent's three runs match on every score
+and to the token count; k=8 changed the wording of 2 answers out of 32
+between runs 2 and 3, with no change in score. The variation that remains is the
+**judge**: two k=8 answers that were identical text in every run were
+scored differently (captain and coach of 2024: 5, 3, 5; "Fab Four": 5, 5, 3).
+Gemini 3.5 Flash Lite ignores the temperature setting (C-011), so the
+judge, not Pitchwise, is now the noisy part of the measurement.
+
+**So the repeats cannot settle the question they were run for.** D-019
+assumed run-to-run noise came from sampling the answers. With that removed,
+three runs of the same configuration agree, and the ranges of k=8 (4.28 to
+4.34) and the agent (4.50) do not overlap. That shows the gap is
+reproducible, not that it is large. The remaining uncertainty is in the 32
+questions themselves.
+
+**Question by question, the agent's lead is one to three questions.** It
+answers the Big Bash vs SA20 comparison in every run, which k=8 refuses in
+every run; "Fab Four", where k=8's answer is a refusal after leaked
+reasoning (C-013); and, depending on the judge, the captain-and-coach
+question, where k=8 names only the captain. k=8 is never right where the
+agent is wrong. Three wins out of three differing questions is consistent
+with a real advantage, but with so few questions that differ it cannot be
+told apart from chance (a sign test on 3 to 0 gives p = 0.25).
+
+**Verdict.** Raising k from 4 to 8 recovers most of the gain on compound
+questions (21 to 26 correct) at 1.9 times the tokens. The agent adds a
+small, reproducible gain on top (two more correct answers on average, never
+fewer) at 2.3 times k=8's tokens, so each correct compound answer costs
+about twice as much. Raise k first; use the agent where compound questions
+matter more than cost. Whether its lead holds on compound questions in
+general needs more `spanning` questions, not more runs.
 
 ### Reproduce
 
@@ -438,6 +462,9 @@ uv run python -m evaluation.variance \
     "k=8=evaluation/results_v4_linear_k8_r*.jsonl" \
     "agentic=evaluation/results_v4_agentic_r*.jsonl" --category spanning
 ```
+
+`variance.py` prints the as-judged table; the C-013 correction is applied by
+hand, as C-011 was in v3.
 
 ---
 

@@ -934,6 +934,20 @@ interval; 32 questions remain a small set, so a one-question swing is 0.03
 to 0.13 in the mean. The comparison is limited to `spanning`, where the two
 approaches differ; the other categories are not rerun.
 
+**Status (October 2026):** measured, and the premise turned out wrong. At
+temperature 0 the three runs of each configuration gave the same answers
+(k=4's runs 2 and 3 word for word, run 1 matching on every score and token
+count; k=8 differed in the wording of 2; the agent matched on every score
+and to the token count). The only remaining run-to-run variation was
+the judge, which scored two identical k=8 answers differently between runs.
+As judged: k=4 21/21/21 correct, k=8 27/26/26, the agent 28/28/28. The
+ranges do not overlap, which shows the gap is reproducible rather than
+large: question by question, the agent wins one to three of the 32 and never
+loses. With so few differing questions, more runs cannot separate that from
+chance; more `spanning` questions could. The v3 conclusion stands: raise k
+first; the agent's extra cost buys a small, consistent gain on compound
+questions. Full results: [`EVAL_RESULTS.md`](./EVAL_RESULTS.md).
+
 ---
 
 ## D-020 · Request Limits on the Service, Ahead of Any Public Deployment
@@ -1408,6 +1422,43 @@ rebuilding the v3 set reproduces it instead of reverting it. Runs on the
 reworded set are v4 runs; the saved v3 files keep the question as it was. It is the
 same kind of label error as C-009: a label that claims something about the
 knowledge base, checked only as well as the search behind it.
+
+---
+
+## C-013 · A Question That Asks for Nations, and an Answer That Leaked Its Reasoning
+
+**Date:** October 2026
+
+**What was found:** reading the v4 runs, "Which nations make up the 'Fab
+Four' generation of modern batting greats alongside Kane Williamson?" has a
+reference answer that lists *players* (Kohli, Smith, Root), and the
+knowledge base names their nations only indirectly. The agent and k=4
+answered with the players and scored 5. k=8 wrote about 600 words of its
+own reasoning into the answer ("Wait, the rules state...") and ended with
+the fixed refusal sentence. The judge scored that 5 in two runs and 3 in
+one, praising it for declining. The refusal rule (C-011) did not apply,
+because the answer is not exactly the refusal sentence.
+
+**Why it matters:** it is one of the few questions where k=8 and the agent
+differ, so it moves the v4 comparison by one answer. Two faults combine: a
+question that does not ask what its reference answers (the same kind of
+label error as C-009 and C-012), and a judge that rewards a refusal dressed
+as reasoning.
+
+**Fix:** the reported v4 table gives the as-judged counts and, beside them,
+k=8 with this answer counted as wrong (26/25/26). The results files keep
+the judge's scores. The question is reworded in `tests_v3.jsonl` (through
+`evaluation/build_tests_v3.py`, as a change to v2 question 79) to "Which
+batters make up the 'Fab Four' generation of modern batting greats
+alongside Kane Williamson?", with the same keywords and reference answer;
+the v2 set stays frozen, and the saved v4 runs keep the question as it was.
+The rule is not widened to answers that merely end with the refusal
+sentence: a partial answer that refuses only its last part (k=8 on the 2024
+captain and coach) would then score 1, which is wrong too.
+
+**Lesson:** the judge still needs reading, not just scoring. At temperature
+0 the answers stopped changing between runs, and the judge became the only
+source of run-to-run difference.
 
 ---
 

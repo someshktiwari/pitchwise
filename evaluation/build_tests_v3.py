@@ -28,6 +28,11 @@ def q(question, keywords, reference, category, doc=None):
 
 # ---- changes to v2 questions (1-based numbers) ----
 changes = {
+    # C-013: the reference lists players, so the question asks for players.
+    79: q("Which batters make up the 'Fab Four' generation of modern batting greats alongside Kane Williamson?",
+          ["Williamson", "Kohli", "Root", "Smith"],
+          "Kane Williamson is regarded as one of the 'Fab Four' modern batting greats, alongside Virat Kohli, Steve Smith, and Joe Root.",
+          "spanning"),
     # C-012: the knowledge base gives a milestone, not his ODI total, so the
     # question asks for the milestone (reworded with the D-018 fixes).
     23: q("Which ODI milestone was Kane Williamson the fastest New Zealand batter to reach?", ["Williamson", "3,000"],

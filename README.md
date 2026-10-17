@@ -295,11 +295,11 @@ existing for show.
 Pitchwise is presented here as a working, evaluated project — not a
 finished product. Concrete next steps, in rough priority order:
 
-- **Finish the v4 control (D-019)** — the measurement fixes are in
-  (answers at temperature 0, whole-word keywords, refusals scored by rule);
-  three runs each of k=4, k=8 and the agent are under way, to see whether
-  the agent's lead over k=8 is larger than run-to-run noise. Still to do
-  from D-018: make generic keywords specific and recompute the saved runs'
+- **More `spanning` questions** — the v4 control (D-019) showed that at
+  temperature 0 the answers barely change between runs, and the agent's lead
+  over k=8 rests on one to three of 32 compound questions. Only a larger
+  compound set can say whether that lead holds in general. Still to do from
+  D-018: make generic keywords specific and recompute the saved runs'
   retrieval metrics.
 - **Hybrid search, then a reranker if needed** — the v3 runs call for it.
   Ambrose's "405 Test wickets" sits in the first paragraph of his article,
